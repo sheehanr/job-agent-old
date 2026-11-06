@@ -19,6 +19,7 @@ internship_monitor_service.py  --dispatches by platform-->  company_monitors/
         |                                                    greenhouse, jibe, eightfold,
         |                                                    oracle_orc, workday,
         |                                                    successfactors, taleo, adp,
+        |                                                    lever, icims,
         |                                                    generic_browser (custom)
         v
 database_monitor.py (dedup-aware upsert)
@@ -45,7 +46,10 @@ Every posting is stored and classified by `role_classifier.py`, but only
 roles in `TARGET_ROLES` (`SWE`, `ML`, `Data`, `Embedded`, `Firmware`,
 `Robotics`, defined in `src/role_classifier.py`) create an alert. Edit that
 set to change what you get alerted about. `Hardware` (EE/RF/FPGA) is still
-classified but not targeted.
+classified but not targeted. Broad words (analytics, informatics, digital,
+information technology, IT) only count when the title has no
+business-function word (marketing, sales, pricing, commercial, finance,
+HR, ...), so "Digital Marketing Intern" doesn't alert.
 
 **Internships and co-ops.** `src/internship_terms.py` defines what counts:
 every keyword-search adapter runs one search per term (`intern`,
@@ -139,8 +143,8 @@ and non-US alert filtering, ntfy/SMS sending, and `--baseline`.
 ## Environment variables
 
 Alerts are optional. Each run sends **one** notification listing every new
-posting with its apply link, only between 8am and 10pm Eastern (alerts found
-overnight are held until the first run after 8am).
+posting with its apply link, at any hour - use your phone's Do Not Disturb
+for quiet hours. A failed send leaves the alerts queued for the next run.
 
 **Push notifications (ntfy, recommended).** Set `NTFY_TOPIC` and alerts go
 out as an [ntfy.sh](https://ntfy.sh) push instead of a text. Install the
@@ -188,6 +192,12 @@ platform's own API). `platform_identifier` format in parentheses:
 - **SuccessFactors Career Site Builder** (`host`) - Boston Scientific,
   Arthrex, HII. Parses the server-rendered `/search/?q=<term>` page (both
   the table and the tile layouts).
+- **Lever** (`site`, the name in `jobs.lever.co/<site>`) - Veeva. Reads
+  Lever's public postings API; a posting counts if its title or its
+  commitment (e.g. "Internship") matches.
+- **iCIMS** (`<portal>.icims.com`) - Cook Medical. Reads the server-rendered
+  `/jobs/search?in_iframe=1` results (headless browsers get a bot check on
+  iCIMS, plain requests don't).
 - **Taleo** (`host|career_section|portal_id`) - Textron Systems. The
   `portal` id is on the `rest/jobboard/searchjobs` request in the browser's
   network tab.

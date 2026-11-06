@@ -235,3 +235,32 @@ def is_us_location(location):
 def is_known_non_us(location):
 
     return classify_location(location) == NON_US
+
+
+# ISO alpha-2 -> country name, for ATSs that report a bare country code
+# (Lever's "country" field). Expanding it avoids codes that collide with
+# US states: Lever's "CA" is Canada, not California.
+ISO2_COUNTRY_NAMES = {
+    "US": "United States", "CA": "Canada", "MX": "Mexico",
+    "GB": "United Kingdom", "UK": "United Kingdom", "IE": "Ireland",
+    "DE": "Germany", "FR": "France", "ES": "Spain", "IT": "Italy",
+    "PT": "Portugal", "NL": "Netherlands", "BE": "Belgium",
+    "CH": "Switzerland", "AT": "Austria", "DK": "Denmark", "SE": "Sweden",
+    "NO": "Norway", "FI": "Finland", "PL": "Poland", "CZ": "Czechia",
+    "HU": "Hungary", "RO": "Romania", "GR": "Greece", "IL": "Israel",
+    "AE": "United Arab Emirates", "SA": "Saudi Arabia", "TR": "Turkey",
+    "IN": "India", "CN": "China", "HK": "Hong Kong", "TW": "Taiwan",
+    "JP": "Japan", "KR": "Korea", "SG": "Singapore", "MY": "Malaysia",
+    "TH": "Thailand", "VN": "Vietnam", "PH": "Philippines",
+    "ID": "Indonesia", "AU": "Australia", "NZ": "New Zealand",
+    "BR": "Brazil", "AR": "Argentina", "CL": "Chile", "CO": "Colombia",
+    "PE": "Peru", "CR": "Costa Rica", "ZA": "South Africa",
+    "EG": "Egypt", "PR": "Puerto Rico",
+}
+
+
+def country_name(code):
+
+    code = (code or "").strip().upper()
+
+    return ISO2_COUNTRY_NAMES.get(code, code)

@@ -6,7 +6,7 @@ The agent checks the career sites of 67 non-Big-Tech companies every 4 hours and
 
 ## How to use it
 
-- **Get alerts:** nothing to do. New matches arrive as one text per run with company, title and apply link. Texts only go out 8am-10pm Eastern; anything found overnight is sent the next morning.
+- **Get alerts:** nothing to do. New matches arrive as one text per run with company, title and apply link. Alerts go out 24/7 whenever a run finds something; quiet hours are left to the phone's Do Not Disturb.
 - **See all postings:** run `git pull` then `venv\Scripts\streamlit run src/dashboard.py`. The dashboard lets you search every posting, see past alerts and view the company list.
 - **Run a check manually:** on GitHub go to Actions → Monitor → Run workflow. Locally, run `venv\Scripts\python src/internship_monitor_service.py`.
 - **Change roles:** edit `TARGET_ROLES` in `src/role_classifier.py`.

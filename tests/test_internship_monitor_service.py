@@ -123,34 +123,6 @@ def test_large_batch_is_one_message_listing_everything():
     assert "https://example.com/job/39" in body
 
 
-from datetime import datetime  # noqa: E402
-
-import pytest  # noqa: E402
-
-
-@pytest.mark.parametrize("utc_hour, expected", [
-    (12, True),    # 8am EDT - window opens
-    (1, True),     # 9pm EDT
-    (2, False),    # 10pm EDT - window closed
-    (7, False),    # 3am EDT (the late GitHub run that texted overnight)
-    (11, False),   # 7am EDT
-])
-def test_texting_window_edt(utc_hour, expected):
-
-    now = datetime(2026, 9, 24, utc_hour, 30, tzinfo=svc.ZoneInfo("UTC"))
-
-    assert svc.in_texting_window(now) is expected
-
-
-def test_texting_window_follows_daylight_saving():
-    """12:30 UTC is 8:30am EDT in September but 7:30am EST in December."""
-
-    utc = svc.ZoneInfo("UTC")
-
-    assert svc.in_texting_window(datetime(2026, 9, 24, 12, 30, tzinfo=utc))
-    assert not svc.in_texting_window(datetime(2026, 12, 24, 12, 30, tzinfo=utc))
-
-
 def _patch_pending(monkeypatch, pending, send_result=True):
 
     sent_bodies = []
@@ -173,16 +145,12 @@ _PENDING = [
     {"id": 2, **_make_internship("Globex", "ML Intern", url="https://g/2")},
 ]
 
-_DAYTIME = datetime(2026, 9, 24, 16, 0, tzinfo=svc.ZoneInfo("UTC"))
-_NIGHT = datetime(2026, 9, 24, 7, 0, tzinfo=svc.ZoneInfo("UTC"))
-
-
-def test_pending_alerts_sent_together_in_daytime(monkeypatch):
+def test_pending_alerts_sent_together(monkeypatch):
 
     sent, marked = _patch_pending(monkeypatch, _PENDING)
     summary = {"sms_sent": 0, "alerts_held": 0}
 
-    svc._send_pending_alerts(summary, now=_DAYTIME)
+    svc._send_pending_alerts(summary)
 
     assert len(sent) == 1
     assert "Acme" in sent[0] and "Globex" in sent[0]
@@ -190,16 +158,10 @@ def test_pending_alerts_sent_together_in_daytime(monkeypatch):
     assert summary["sms_sent"] == 1
 
 
-def test_pending_alerts_held_overnight(monkeypatch):
+def test_no_quiet_hours_window():
+    """Alerts go out 24/7 - quiet hours are the phone's job now."""
 
-    sent, marked = _patch_pending(monkeypatch, _PENDING)
-    summary = {"sms_sent": 0, "alerts_held": 0}
-
-    svc._send_pending_alerts(summary, now=_NIGHT)
-
-    assert sent == []
-    assert marked == []
-    assert summary["alerts_held"] == 2
+    assert not hasattr(svc, "in_texting_window")
 
 
 def test_failed_send_keeps_alerts_queued(monkeypatch):
@@ -207,7 +169,7 @@ def test_failed_send_keeps_alerts_queued(monkeypatch):
     sent, marked = _patch_pending(monkeypatch, _PENDING, send_result=False)
     summary = {"sms_sent": 0, "alerts_held": 0}
 
-    svc._send_pending_alerts(summary, now=_DAYTIME)
+    svc._send_pending_alerts(summary)
 
     assert len(sent) == 1
     assert marked == []

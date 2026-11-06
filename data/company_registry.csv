@@ -83,13 +83,13 @@ Boston Scientific,Medtech,High,SWE|Data|Embedded|Firmware,successfactors,https:/
 Merck,Pharma,High,SWE|ML|Data,workday,https://msd.wd5.myworkdayjobs.com/SearchJobs,msd.wd5.myworkdayjobs.com|msd|SearchJobs,yes
 Johnson & Johnson,Medtech/Pharma,High,SWE|ML|Data|Embedded|Robotics,workday,https://jj.wd5.myworkdayjobs.com/jj,jj.wd5.myworkdayjobs.com|jj|jj,yes
 Amgen,Biotech,High,SWE|ML|Data,workday,https://amgen.wd1.myworkdayjobs.com/Careers,amgen.wd1.myworkdayjobs.com|amgen|Careers,yes
-Veeva Systems,Health Tech,High,SWE|Data,custom,https://careers.veeva.com/job-search-results/?search=intern,,no
-Cook Medical,Medtech,Medium,SWE|Data|Embedded,custom,https://americas-cookmedical.icims.com/jobs/search?ss=1&searchKeyword=intern,,no
-Oura,Health Wearables,High,SWE|ML|Data|Embedded|Firmware,greenhouse,https://job-boards.greenhouse.io/oura,oura,no
+Veeva Systems,Health Tech,High,SWE|Data,lever,https://careers.veeva.com/job-search-results/,veeva,yes
+Cook Medical,Medtech,Medium,SWE|Data|Embedded,icims,https://www.cookmedical.com/careers/internships/,americas-cookmedical.icims.com,yes
+Oura,Health Wearables,High,SWE|ML|Data|Embedded|Firmware,greenhouse,https://job-boards.greenhouse.io/oura,oura,yes
 Zimmer Biomet,Medtech,Medium,SWE|Data|Robotics,custom,https://careers.zimmerbiomet.com/us/en/search-results?keywords=intern,,yes
 Becton Dickinson,Medtech,High,SWE|Data|Embedded|Firmware,workday,https://bdx.wd1.myworkdayjobs.com/EXTERNAL_CAREER_SITE_USA,bdx.wd1.myworkdayjobs.com|bdx|EXTERNAL_CAREER_SITE_USA,yes
 Intuitive Surgical,Medtech,High,SWE|ML|Embedded|Firmware|Robotics,custom,https://careers.intuitive.com/en/jobs/?search=intern,,yes
-Tempus AI,Health Tech,High,SWE|ML|Data,workday,https://tempus.wd5.myworkdayjobs.com/tempus_careers,tempus.wd5.myworkdayjobs.com|tempus|tempus_careers,no
+Tempus AI,Health Tech,High,SWE|ML|Data,workday,https://tempus.wd5.myworkdayjobs.com/tempus_careers,tempus.wd5.myworkdayjobs.com|tempus|tempus_careers,yes
 Eli Lilly,Pharma,High,SWE|ML|Data,workday,https://lilly.wd115.myworkdayjobs.com/LLY,lilly.wd115.myworkdayjobs.com|lilly|LLY,yes
 Arthrex,Medtech,Medium,SWE|Data|Robotics,successfactors,https://careers.arthrex.com/search/?q=intern,careers.arthrex.com,yes
 Epic Systems,Health Tech,High,SWE|Data,custom,https://careers.epic.com/jobs/,,yes

@@ -103,13 +103,20 @@ ROLE_KEYWORDS = [
         "data engineer",
         "data analytics",
         "data analyst",
-        "analytics",
-        "informatics",
         "bioinformatics",
     ]),
-    # Broad tech-department words. Checked after Data so "Digital
-    # Analytics Intern" is Data, and after Hardware so "Digital Design"
-    # (an EE/chip-design term) stays Hardware.
+]
+
+# Broad tech-department words. They only count when the title has no
+# business-function word (see _NON_CS_RE), so "Digital Marketing Intern"
+# and "Pricing & Commercial Analytics Intern" stay Other while "Digital
+# Health Intern" and "AI & Analytics Analyst" match. Checked after
+# everything above, so "Digital Design" (EE) stays Hardware.
+BROAD_ROLE_KEYWORDS = [
+    ("Data", [
+        "analytics",
+        "informatics",
+    ]),
     ("SWE", [
         "information technology",
         "information systems",
@@ -117,13 +124,30 @@ ROLE_KEYWORDS = [
     ]),
 ]
 
+# Business functions that make a broad-keyword title a non-CS role.
+_NON_CS_RE = re.compile(
+    r"\b(?:marketing|sales|pricing|market access|commercial|finance|"
+    r"financial|accounting|tax|audit|procurement|sourcing|purchasing|"
+    r"supply chain|human resources|hr|talent acquisition|recruiting|"
+    r"communications|"
+    r"legal|compliance|regulatory|brand|business development|"
+    r"customer experience|strategy|patient|medical affairs)\b",
+    re.IGNORECASE,
+)
+
 # Keywords must start at a word boundary, so short ones like "rtl" and
 # "asic" don't fire inside "Portland" or "Basic". No trailing boundary,
 # so "robot" still matches "robotics".
-_ROLE_PATTERNS = [
-    (category, re.compile("|".join(r"\b" + re.escape(k) for k in keywords)))
-    for category, keywords in ROLE_KEYWORDS
-]
+def _compile(keyword_table):
+
+    return [
+        (category, re.compile("|".join(r"\b" + re.escape(k) for k in keywords)))
+        for category, keywords in keyword_table
+    ]
+
+
+_ROLE_PATTERNS = _compile(ROLE_KEYWORDS)
+_BROAD_ROLE_PATTERNS = _compile(BROAD_ROLE_KEYWORDS)
 
 
 _IT_ABBREVIATION_RE = re.compile(r"(?<![A-Za-z])IT(?![A-Za-z])")
@@ -194,6 +218,16 @@ def classify_role(title):
     normalized = re.sub(r"\s+", " ", title).strip().lower()
 
     for category, pattern in _ROLE_PATTERNS:
+
+        if pattern.search(normalized):
+
+            return category
+
+    if _NON_CS_RE.search(normalized):
+
+        return "Other"
+
+    for category, pattern in _BROAD_ROLE_PATTERNS:
 
         if pattern.search(normalized):
 

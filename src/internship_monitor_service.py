@@ -1,6 +1,4 @@
 import argparse
-from datetime import datetime
-from zoneinfo import ZoneInfo
 
 from company_registry_loader import load_enabled_companies
 from company_monitors.greenhouse_monitor import get_greenhouse_internships
@@ -11,6 +9,8 @@ from company_monitors.workday_monitor import get_workday_internships
 from company_monitors.successfactors_monitor import get_successfactors_internships
 from company_monitors.adp_monitor import get_adp_internships
 from company_monitors.taleo_monitor import get_taleo_internships
+from company_monitors.lever_monitor import get_lever_internships
+from company_monitors.icims_monitor import get_icims_internships
 from company_monitors.generic_browser_monitor import get_browser_scraped_internships
 from database_setup import create_database
 from database_monitor import (
@@ -28,23 +28,6 @@ from location_filter import (
 )
 import posting_location
 from sms_alerts import send_alert
-
-# Texts only go out 8am-10pm Eastern. Alerts found outside that window
-# stay queued in the DB and go out with the first run after 8am. Checked
-# here rather than in the workflow cron, since GitHub often starts
-# scheduled runs hours late and cron can't follow Daylight Saving.
-TEXTING_TIMEZONE = ZoneInfo("America/New_York")
-TEXTING_START_HOUR = 8
-TEXTING_END_HOUR = 22
-
-
-def in_texting_window(now=None):
-
-    now = now or datetime.now(TEXTING_TIMEZONE)
-
-    local = now.astimezone(TEXTING_TIMEZONE)
-
-    return TEXTING_START_HOUR <= local.hour < TEXTING_END_HOUR
 
 
 def _eightfold_adapter(company):
@@ -151,6 +134,14 @@ def _build_platform_adapters(browser):
             company["platform_identifier"]
         ),
         "taleo": _taleo_adapter,
+        "lever": lambda company: get_lever_internships(
+            company["company"],
+            company["platform_identifier"]
+        ),
+        "icims": lambda company: get_icims_internships(
+            company["company"],
+            company["platform_identifier"]
+        ),
         "adp": _make_adp_adapter(browser),
         "custom": _make_custom_adapter(browser),
     }
@@ -254,24 +245,17 @@ def _baseline_pending_alerts(summary):
     )
 
 
-def _send_pending_alerts(summary, now=None):
+def _send_pending_alerts(summary):
     """
-    Text every queued (not yet sent) alert in one message, if inside the
-    texting window. Only marks them sent once the send succeeds, so a
-    failed send is retried by the next run instead of lost.
+    Send every queued (not yet sent) alert in one notification, at any
+    hour (quiet hours are left to the phone's own Do Not Disturb). Only
+    marks them sent once the send succeeds, so a failed send is retried
+    by the next run instead of lost.
     """
 
     pending = get_unsent_alerts()
 
     if not pending:
-        return
-
-    if not in_texting_window(now):
-
-        print(f"Outside texting hours - holding {len(pending)} alert(s).")
-
-        summary["alerts_held"] = len(pending)
-
         return
 
     count = len(pending)

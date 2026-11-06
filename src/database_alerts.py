@@ -13,7 +13,7 @@ def save_alert(
 ):
     """
     Save an alert as not-yet-texted. It's sent (and marked sent) by the
-    next monitor run that falls inside the texting window.
+    next monitor run.
     """
 
     conn = sqlite3.connect(db_path)

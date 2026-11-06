@@ -161,7 +161,36 @@ def test_target_roles():
     ("RF Engineer Intern", "Hardware"),
     # Lowercase "it" isn't the IT abbreviation.
     ("Make it happen intern", "Other"),
+    ("Intern - AI & Analytics Analyst - Nashville, TN", "Data"),
+    ("2027 Future Talent Program - Digital Transformation - Intern", "SWE"),
 ])
 def test_tech_department_keywords(title, expected):
+
+    assert classify_role(title) == expected
+
+
+@pytest.mark.parametrize("title", [
+    "Summer 2027 Internship - Digital Marketing - New Jersey",
+    "2027 Summer Intern Market Access, Pricing & Commercial Analytics",
+    "2027 Future Talent Program - International Pricing Analytics - Intern",
+    "Intern - Customer Experience Analytics (Health Systems Strategy)",
+    "IT Finance Intern",
+    "Digital Sales Co-op",
+    "HR Analytics Intern",
+])
+def test_broad_keywords_ignored_for_business_roles(title):
+    """Broad words (analytics, digital, IT, ...) don't make a business
+    role a CS one."""
+
+    assert classify_role(title) == "Other"
+
+
+@pytest.mark.parametrize("title, expected", [
+    # Specific CS keywords still win even with a business word present.
+    ("Summer 2027 Internship - Data Analytics - Customer One", "Data"),
+    ("Software Engineering Intern - Commercial Operations", "SWE"),
+    ("Marketing Data Science Intern", "Data"),
+])
+def test_specific_keywords_beat_business_words(title, expected):
 
     assert classify_role(title) == expected

@@ -3,11 +3,8 @@ name: Monitor (every 4 hours, all companies)
 on:
   schedule:
     # Every 4 hours around the clock, at :17 past (GitHub drops far more
-    # runs scheduled exactly on the hour). UTC 2,6,10,14,18,22 = 10pm,
-    # 2am, 6am, 10am, 2pm, 6pm EDT (an hour earlier in EST). Overnight
-    # runs still scan and record new postings, but texts are held until
-    # 8am Eastern by the texting window in internship_monitor_service.py -
-    # that check, not this cron, is what enforces quiet hours.
+    # runs scheduled exactly on the hour). Alerts are sent from every run,
+    # 24/7 - quiet hours are left to the phone's Do Not Disturb.
     - cron: "17 2,6,10,14,18,22 * * *"
   workflow_dispatch:
     inputs:
