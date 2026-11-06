@@ -10,22 +10,28 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from role_classifier import classify_role
 from url_utils import clean_url
+from internship_terms import INTERN_SEARCH_TERMS, is_internship_title
 
-_INTERN_WORD_RE = re.compile(
-    r"\bintern(ship)?s?\b|\bco-?op\b", re.IGNORECASE
-)
-
-# One search-result row. Each row renders its title link twice (desktop
-# and mobile layouts), hence the dedup on href below.
+# One search-result row. Sites use one of two layouts: a table
+# (<tr class="data-row">, e.g. HII, Boston Scientific) or tiles
+# (<li class="job-tile">, e.g. Arthrex). Each row renders its title link
+# twice (desktop and mobile layouts), hence the dedup on href below.
 _ROW_RE = re.compile(
-    r'<tr class="data-row".*?</tr>', re.IGNORECASE | re.DOTALL
+    r'<tr class="data-row".*?</tr>'
+    r'|<li class="job-tile.*?(?=<li class="job-tile|</ul>)',
+    re.IGNORECASE | re.DOTALL
 )
+# Attribute order differs between layouts, so find the jobTitle-link
+# anchor first and read its href separately.
 _TITLE_LINK_RE = re.compile(
-    r'<a href="(/job/[^"]+)" class="jobTitle-link"[^>]*>([^<]+)</a>',
+    r'<a\b([^>]*\bclass="jobTitle-link[^"]*"[^>]*)>\s*([^<]+?)\s*</a>',
     re.IGNORECASE
 )
+_HREF_RE = re.compile(r'\bhref="([^"]*/job/[^"]+)"', re.IGNORECASE)
 _LOCATION_RE = re.compile(
-    r'<span class="jobLocation">\s*([^<]+?)\s*</span>', re.IGNORECASE
+    r'<span class="jobLocation">\s*([^<]+?)\s*</span>'
+    r'|-section-location-value">\s*([^<]+?)\s*</div>',
+    re.IGNORECASE
 )
 _JOB_ID_RE = re.compile(r"/(\d+)/?$")
 
@@ -47,56 +53,66 @@ def get_successfactors_internships(company_name, host, max_pages=8):
     internships = []
     seen_hrefs = set()
 
-    for page in range(max_pages):
+    # One search per term (intern, co-op, coop, ...); the seen-id set
+    # dedupes postings that match more than one.
+    for term in INTERN_SEARCH_TERMS:
 
-        try:
-            response = requests.get(
-                f"https://{host}/search/",
-                params={"q": "intern", "startrow": page * page_size},
-                headers={"User-Agent": "Mozilla/5.0"},
-                timeout=15
-            )
-            response.raise_for_status()
+        for page in range(max_pages):
 
-        except Exception as e:
-            print(f"Error fetching jobs for {company_name}: {e}")
-            break
+            try:
+                response = requests.get(
+                    f"https://{host}/search/",
+                    params={"q": term, "startrow": page * page_size},
+                    headers={"User-Agent": "Mozilla/5.0"},
+                    timeout=15
+                )
+                response.raise_for_status()
 
-        rows = _ROW_RE.findall(response.text)
+            except Exception as e:
+                print(f"Error fetching jobs for {company_name}: {e}")
+                break
 
-        for row in rows:
+            rows = _ROW_RE.findall(response.text)
 
-            link = _TITLE_LINK_RE.search(row)
+            for row in rows:
 
-            if not link:
-                continue
+                link = _TITLE_LINK_RE.search(row)
 
-            href, title = link.group(1), html.unescape(link.group(2)).strip()
+                if not link:
+                    continue
 
-            if href in seen_hrefs or not _INTERN_WORD_RE.search(title):
-                continue
+                href = _HREF_RE.search(link.group(1))
 
-            seen_hrefs.add(href)
+                if not href:
+                    continue
 
-            location = _LOCATION_RE.search(row)
-            job_id = _JOB_ID_RE.search(href)
+                href = href.group(1)
+                title = html.unescape(link.group(2)).strip()
 
-            internships.append({
-                "company": company_name,
-                "title": title,
-                "location": (
-                    html.unescape(location.group(1)) if location
-                    else "Unknown"
-                ),
-                "role_type": classify_role(title),
-                "application_url": clean_url(f"https://{host}{href}"),
-                "external_job_id": job_id.group(1) if job_id else href,
-                "source_platform": "successfactors",
-                "date_discovered": date.today().isoformat(),
-            })
+                if href in seen_hrefs or not is_internship_title(title):
+                    continue
 
-        if len(rows) < page_size:
-            break
+                seen_hrefs.add(href)
+
+                location = _LOCATION_RE.search(row)
+                job_id = _JOB_ID_RE.search(href)
+
+                internships.append({
+                    "company": company_name,
+                    "title": title,
+                    "location": (
+                        html.unescape(location.group(1) or location.group(2))
+                        if location else "Unknown"
+                    ),
+                    "role_type": classify_role(title),
+                    "application_url": clean_url(f"https://{host}{href}"),
+                    "external_job_id": job_id.group(1) if job_id else href,
+                    "source_platform": "successfactors",
+                    "date_discovered": date.today().isoformat(),
+                })
+
+            if len(rows) < page_size:
+                break
 
     return internships
 

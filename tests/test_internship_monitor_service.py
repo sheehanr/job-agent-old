@@ -159,11 +159,11 @@ def _patch_pending(monkeypatch, pending, send_result=True):
     monkeypatch.setattr(svc, "get_unsent_alerts", lambda: pending)
     monkeypatch.setattr(svc, "mark_alerts_sent", lambda ids: marked.extend(ids))
 
-    def fake_send(body):
+    def fake_send(body, title=None):
         sent_bodies.append(body)
         return send_result
 
-    monkeypatch.setattr(svc, "send_sms_alert", fake_send)
+    monkeypatch.setattr(svc, "send_alert", fake_send)
 
     return sent_bodies, marked
 
@@ -212,3 +212,174 @@ def test_failed_send_keeps_alerts_queued(monkeypatch):
     assert len(sent) == 1
     assert marked == []
     assert summary["alerts_held"] == 2
+
+
+def test_unknown_location_is_labelled_in_alert_body():
+
+    single = svc._build_batch_sms_body([
+        _make_internship("Epic", "Software Developer Intern", "Unknown",
+                         "https://epic.com/j/1")
+    ])
+
+    assert "(location unknown)" in single
+
+    batch = svc._build_batch_sms_body([
+        _make_internship("Epic", "Software Developer Intern", "Unknown",
+                         "https://epic.com/j/1"),
+        _make_internship("Insulet", "DevOps Intern", "Acton, Massachusetts",
+                         "https://insulet.com/j/2"),
+    ])
+
+    assert "https://epic.com/j/1 (location unknown)" in batch
+    assert "https://insulet.com/j/2\n" in batch + "\n"
+    assert "https://insulet.com/j/2 (location unknown)" not in batch
+
+
+def test_baseline_marks_queued_alerts_sent_without_sending(monkeypatch):
+
+    sent, marked = _patch_pending(monkeypatch, _PENDING)
+    summary = {"sms_sent": 0, "alerts_held": 0}
+
+    svc._baseline_pending_alerts(summary)
+
+    assert sent == []
+    assert marked == [1, 2]
+    assert summary["alerts_baselined"] == 2
+
+
+def test_run_monitor_baseline_never_sends(monkeypatch):
+
+    monkeypatch.setattr(svc, "create_database", lambda: None)
+    monkeypatch.setattr(svc, "load_enabled_companies", lambda: [])
+
+    sent, marked = _patch_pending(monkeypatch, _PENDING)
+
+    summary = svc.run_monitor(baseline=True)
+
+    assert sent == []
+    assert marked == [1, 2]
+    assert summary["sms_sent"] == 0
+
+
+def _empty_summary():
+    return {
+        "companies_successful": 0, "companies_failed": 0,
+        "companies_skipped": 0, "jobs_retrieved": 0,
+        "internships_matched": 0, "new_internships_inserted": 0,
+        "existing_internships_skipped": 0, "alerts_created": 0,
+        "alerts_skipped_non_us": 0, "locations_resolved": 0,
+        "unknown_location_companies": set(),
+    }
+
+
+def _run_with(monkeypatch, company, internships, resolved=""):
+    """Run _run_all_companies against stubbed DB/lookups; returns
+    (alerts created, location updates, lookups attempted, summary)."""
+
+    alerts, updates, lookups = [], [], []
+
+    monkeypatch.setattr(
+        svc, "upsert_internship",
+        lambda **kw: {"is_new": True, "dedup_key": kw["title"]}
+    )
+
+    def fake_alert(company, title, location, role_type, application_url=""):
+        alerts.append((title, location))
+        return {"role_type": role_type}
+
+    monkeypatch.setattr(svc, "create_alert_for_new_internship", fake_alert)
+    monkeypatch.setattr(
+        svc, "update_internship_location",
+        lambda key, loc: updates.append((key, loc))
+    )
+
+    def fake_resolve(company_row, internship, browser=None):
+        lookups.append(internship["title"])
+        return resolved
+
+    monkeypatch.setattr(svc, "_resolve_location", fake_resolve)
+
+    summary = _empty_summary()
+
+    svc._run_all_companies(
+        [company], {company["platform"]: lambda c: internships}, summary
+    )
+
+    return alerts, updates, lookups, summary
+
+
+def _job(title, location, role_type="SWE"):
+    return {
+        "company": "Acme", "title": title, "location": location,
+        "role_type": role_type, "application_url": f"https://acme/{title}",
+    }
+
+
+def test_non_us_postings_do_not_alert(monkeypatch):
+
+    alerts, _, lookups, summary = _run_with(
+        monkeypatch,
+        {"company": "Acme", "platform": "workday"},
+        [
+            _job("SWE Intern A", "Boca Raton, FL"),
+            _job("SWE Intern B", "Suzhou, China"),
+        ],
+    )
+
+    assert alerts == [("SWE Intern A", "Boca Raton, FL")]
+    assert lookups == []
+    assert summary["alerts_skipped_non_us"] == 1
+
+
+def test_unknown_location_resolved_from_posting(monkeypatch):
+
+    alerts, updates, lookups, summary = _run_with(
+        monkeypatch,
+        {"company": "Acme", "platform": "custom"},
+        [_job("SWE Intern", "Unknown")],
+        resolved="Verona, WI, US",
+    )
+
+    assert lookups == ["SWE Intern"]
+    assert updates == [("SWE Intern", "Verona, WI, US")]
+    assert alerts == [("SWE Intern", "Verona, WI, US")]
+    assert summary["locations_resolved"] == 1
+    assert summary["unknown_location_companies"] == set()
+
+
+def test_unknown_location_resolved_to_non_us_is_dropped(monkeypatch):
+
+    alerts, _, _, summary = _run_with(
+        monkeypatch,
+        {"company": "Acme", "platform": "workday"},
+        [_job("SWE Intern", "4 Locations")],
+        resolved="London, United Kingdom; Utrecht, Holland",
+    )
+
+    assert alerts == []
+    assert summary["alerts_skipped_non_us"] == 1
+
+
+def test_still_unknown_location_alerts_and_is_reported(monkeypatch):
+
+    alerts, updates, _, summary = _run_with(
+        monkeypatch,
+        {"company": "Acme", "platform": "custom"},
+        [_job("SWE Intern", "Unknown")],
+        resolved="",
+    )
+
+    assert alerts == [("SWE Intern", "Unknown")]
+    assert updates == []
+    assert summary["unknown_location_companies"] == {"Acme"}
+
+
+def test_no_lookup_for_non_target_roles(monkeypatch):
+
+    _, _, lookups, _ = _run_with(
+        monkeypatch,
+        {"company": "Acme", "platform": "custom"},
+        [_job("Marketing Intern", "Unknown", role_type="Other")],
+    )
+
+    assert lookups == []

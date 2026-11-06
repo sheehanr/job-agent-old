@@ -1,68 +1,96 @@
 company,industry,priority,internship_types,platform,career_url,platform_identifier,enabled
-Target,Retail,High,SWE|Data|Cybersecurity,custom,https://corporate.target.com/careers,,yes
-Chipotle,Restaurant,High,SWE|Data,custom,https://jobs.chipotle.com/internships,,yes
-Progressive,Insurance,High,SWE|ML|Data|Cybersecurity,custom,https://careers.progressive.com/pages/students-graduates-internships,,yes
-Hudl,Sports Tech,High,SWE|ML|Data|Product,greenhouse,https://www.hudl.com/jobs/interns,hudl,yes
-Strava,Sports Tech,High,SWE|ML|Mobile,custom,https://www.strava.com/careers,,yes
-Nike,Retail,Medium,SWE|ML|Data|Cybersecurity,custom,https://jobs.nike.com,,yes
-State Farm,Insurance,Medium,SWE|Data|Cybersecurity,jibe,https://jobs.statefarm.com,jobs.statefarm.com,yes
+Target,Retail,High,SWE|Data|Cybersecurity,custom,https://corporate.target.com/careers,,no
+Chipotle,Restaurant,High,SWE|Data,custom,https://jobs.chipotle.com/internships,,no
+Progressive,Insurance,High,SWE|ML|Data|Cybersecurity,custom,https://careers.progressive.com/pages/students-graduates-internships,,no
+Hudl,Sports Tech,High,SWE|ML|Data|Product,greenhouse,https://www.hudl.com/jobs/interns,hudl,no
+Strava,Sports Tech,High,SWE|ML|Mobile,custom,https://www.strava.com/careers,,no
+Nike,Retail,Medium,SWE|ML|Data|Cybersecurity,custom,https://jobs.nike.com,,no
+State Farm,Insurance,Medium,SWE|Data|Cybersecurity,jibe,https://jobs.statefarm.com,jobs.statefarm.com,no
 Garmin,Technology,Medium,SWE|Embedded|Firmware,jibe,https://careers.garmin.com,careers.garmin.com,yes
-John Deere,Agriculture,Medium,SWE|Data|Embedded|Robotics,eightfold,https://careers.deere.com,careers.deere.com|johndeere.com,yes
-Cummins,Manufacturing,Medium,SWE|Data|Embedded|Firmware,custom,https://cummins.jobs/career-path/internships/jobs/,,yes
-Caterpillar,Manufacturing,Medium,SWE|Data|Embedded|Robotics,custom,https://careers.caterpillar.com,,yes
-Delta Airlines,Transportation,Medium,SWE|Data|Cybersecurity,custom,https://www.delta.com/us/en/careers/students-and-early-careers,,yes
-UPS,Logistics,Medium,SWE|Data|Cybersecurity,custom,https://www.jobs-ups.com,,yes
-Fidelity,Finance,Medium,SWE|ML|Data|Cybersecurity,custom,https://jobs.fidelity.com,,yes
-RTX,Aerospace,Medium,SWE|ML|Data|Embedded|Firmware|Robotics|Cybersecurity,custom,https://careers.rtx.com,,yes
-Lockheed Martin,Aerospace,Medium,SWE|ML|Data|Embedded|Firmware|Robotics|Cybersecurity,eightfold,https://www.lockheedmartin.com/en-us/careers/index.html,lockheedmartin.eightfold.ai|lockheedmartin.com,yes
-L3Harris,Defense,Medium,SWE|ML|Data|Embedded|Firmware|Robotics|Cybersecurity,custom,https://careers.l3harris.com,,yes
-Honeywell,Manufacturing,Medium,SWE|ML|Data|Embedded|Firmware|Robotics|Cybersecurity,oracle_orc,https://careers.honeywell.com,careers.honeywell.com|ibqbjb.fa.ocs.oraclecloud.com|CX_1|Honeywell,yes
-3M,Manufacturing,Medium,SWE|Data|Cybersecurity,custom,https://3m.wd1.myworkdayjobs.com/en/Search,,yes
-Raymond James,Finance,Medium,SWE|Data|Cybersecurity,custom,https://www.raymondjames.com/careers,,yes
-Capital One,Finance,Medium,SWE|ML|Data|Cybersecurity,custom,https://www.capitalonecareers.com,,yes
-Publix,Retail,Medium,SWE|Data|Cybersecurity,custom,https://jobs.publix.com,,yes
-Best Buy,Retail,Medium,SWE|ML|Data|Cybersecurity,custom,https://jobs.bestbuy.com,,yes
-McKesson,Healthcare Distribution,Medium,SWE|Cybersecurity|Data,custom,https://careers.mckesson.com/en/early-talent,,yes
-Cigna,Health Insurance,Medium,SWE|Data,custom,https://jobs.thecignagroup.com/us/en/technology-development-program,,yes
-Liberty Mutual,Insurance,Medium,SWE|Data|Cybersecurity,custom,https://jobs.libertymutualgroup.com/careers/undergraduate-internships/,,yes
-USAA,Insurance/Finance,Medium,SWE|Data|Cybersecurity,workday,https://usaa.wd1.myworkdayjobs.com/USAAJOBSWD,usaa.wd1.myworkdayjobs.com|usaa|USAAJOBSWD,yes
-MassMutual,Insurance/Finance,Medium,SWE|Data,custom,https://careers.massmutual.com/students,,yes
-Northwestern Mutual,Insurance/Finance,Medium,SWE|Data,custom,https://careers.northwesternmutual.com/teams/internships/,,yes
-Truist,Banking,Medium,SWE|Data|Cybersecurity,custom,https://careers.truist.com/us/en/early-career-listings-2026,,yes
-Charles Schwab,Finance,Medium,SWE|Data,custom,https://www.schwabjobs.com/internship-academy,,yes
-Edward Jones,Finance,Medium,SWE,custom,https://www.edwardjones.com/us-en/about-us/careers,,yes
-Southwest Airlines,Airlines,Medium,SWE|Data,custom,https://careers.southwestair.com/us/en/programs,,yes
-FedEx,Logistics,Medium,SWE|Data,custom,https://careers.fedex.com/career-areas/student-programs/jobs,,yes
-Home Depot,Retail,Medium,SWE|Data|ML,workday,https://homedepot.wd5.myworkdayjobs.com/CareerDepot,homedepot.wd5.myworkdayjobs.com|homedepot|CareerDepot,yes
-Lowe's,Retail,Medium,SWE|Data,custom,https://talent.lowes.com/us/en/internships,,yes
-Dick's Sporting Goods,Retail,Medium,SWE|Cybersecurity|Data,custom,https://www.dickssportinggoods.jobs/students-grads/,,yes
-Kroger,Retail/Grocery,Medium,SWE|Data,custom,https://www.krogerfamilycareers.com/en/sites/CX_2001/pages/5015,,yes
-Illinois Tool Works,Manufacturing,Medium,SWE|Embedded,custom,https://jobs.itw.com,,yes
-GE Aerospace,Aerospace,Medium,SWE|Embedded|Firmware,custom,https://careers.geaerospace.com/global/en/us-internships,,yes
-Boeing,Aerospace,Medium,SWE|Embedded|Data,custom,https://jobs.boeing.com/category/internship-jobs/185/9287/1,,yes
-Duke Energy,Energy/Utilities,Medium,SWE|Data|Cybersecurity,custom,https://dukeenergy.wd1.myworkdayjobs.com/search,,yes
-UnitedHealth Group,Healthcare,Medium,SWE|Data|ML,custom,https://www.unitedhealthgroup.com/careers,,yes
-Parker Hannifin,Manufacturing,Medium,SWE|Embedded|Data,custom,https://www.parker.com/us/en/careers/internships.html,,yes
-Eaton,Manufacturing,Medium,SWE|Embedded|Data,eightfold,https://www.eaton.com/us/en-us/company/careers/university-students.html,eaton.eightfold.ai|eaton.com,yes
-Mercury Insurance,Insurance,Medium,Data|SWE,custom,https://www.mercuryinsurance.com/about/careers-jobs/early-careers/internships.html,,yes
-PepsiCo,Consumer Goods,Medium,SWE|Data,custom,https://www.pepsicojobs.com/internshipsprograms/jobs,,yes
-Procter & Gamble,Consumer Goods,Medium,SWE|Data|ML,custom,https://www.pgcareers.com/global/en/internships,,yes
-Northrop Grumman,Defense,High,SWE|Cybersecurity|Data|Embedded,eightfold,https://jobs.northropgrumman.com/careers,jobs.northropgrumman.com|ngc.com,yes
-General Dynamics,Defense,High,SWE|Cybersecurity|Embedded,custom,https://www.gd.com/careers/interns,,yes
-General Dynamics IT,Defense,Medium,SWE|Data|Cybersecurity,workday,https://gdit.wd5.myworkdayjobs.com/External_Career_Site,gdit.wd5.myworkdayjobs.com|gdit|External_Career_Site,yes
-BAE Systems Inc,Defense,High,SWE|Cybersecurity|Embedded|Data,custom,https://jobs.baesystems.com/global/en/leap,,yes
-Huntington Ingalls Industries,Defense,High,SWE|Cybersecurity|Data,successfactors,https://careers.huntingtoningalls.com/search/?q=intern,careers.huntingtoningalls.com,yes
-HII Mission Technologies,Defense,High,SWE|ML|Data|Cybersecurity,successfactors,https://jobs.hii-tsd.com/search/?q=intern,jobs.hii-tsd.com,yes
-Leidos,Defense,Medium,SWE|ML|Data|Cybersecurity,workday,https://leidos.wd5.myworkdayjobs.com/External,leidos.wd5.myworkdayjobs.com|leidos|External,yes
-Booz Allen Hamilton,Defense,Medium,SWE|Data|Cybersecurity,workday,https://bah.wd1.myworkdayjobs.com/BAH_Jobs,bah.wd1.myworkdayjobs.com|bah|BAH_Jobs,yes
-SAIC,Defense,Medium,SWE|Data|Cybersecurity,custom,https://jobs.saic.com/search/jobs?q=intern,,yes
-CACI International,Defense,Medium,SWE|Data|Cybersecurity,eightfold,https://careers.caci.com/global/en/early-career-internships,caci.eightfold.ai|caci.com,yes
-Textron Systems,Defense,Medium,SWE|Embedded|Robotics,taleo,https://textron.taleo.net/careersection/textron/jobsearch.ftl?lang=en&keyword=intern,textron.taleo.net|textron|8140753014,yes
-Leonardo DRS,Defense,Medium,SWE|Embedded|Firmware,custom,https://careers.leonardodrs.com/go/Internships/9729000/,,yes
-Kratos Defense,Defense,Medium,SWE|Cybersecurity|Embedded,custom,https://kratosdefense.submit4jobs.com/,,yes
-Mercury Systems,Defense,Medium,SWE|Embedded|Firmware|Hardware,adp,https://myjobs.adp.com/mercurysystemscareers/cx/job-listing?c=1162151&d=ExternalCareerSite,mercurysystemscareers|1162151,yes
-ManTech,Defense,Medium,SWE|Cybersecurity|Data,custom,https://careers.mantech.com/en_US/careers/SearchJobs/intern?listFilterMode=1&jobRecordsPerPage=200,,yes
-Parsons Corporation,Defense,Medium,SWE|Data|Robotics,workday,https://parsons.wd5.myworkdayjobs.com/Search,parsons.wd5.myworkdayjobs.com|parsons|Search,yes
-Peraton,Defense,Medium,SWE|Cybersecurity|Data,custom,https://www.careers.peraton.com/students-early-career,,yes
-MITRE Corporation,Defense Research,Medium,SWE|ML|Data|Cybersecurity,custom,https://careers.mitre.org/us/en/search-results?keywords=intern,,yes
-Johns Hopkins Applied Physics Laboratory,Defense Research,Medium,SWE|ML|Data|Robotics,jibe,https://careers.jhuapl.edu/internships,careers.jhuapl.edu,yes
+John Deere,Agriculture,Medium,SWE|Data|Embedded|Robotics,eightfold,https://careers.deere.com,careers.deere.com|johndeere.com,no
+Cummins,Manufacturing,Medium,SWE|Data|Embedded|Firmware,custom,https://cummins.jobs/career-path/internships/jobs/,,no
+Caterpillar,Manufacturing,Medium,SWE|Data|Embedded|Robotics,custom,https://careers.caterpillar.com,,no
+Delta Airlines,Transportation,Medium,SWE|Data|Cybersecurity,custom,https://www.delta.com/us/en/careers/students-and-early-careers,,no
+UPS,Logistics,Medium,SWE|Data|Cybersecurity,custom,https://www.jobs-ups.com,,no
+Fidelity,Finance,Medium,SWE|ML|Data|Cybersecurity,custom,https://jobs.fidelity.com,,no
+RTX,Aerospace,Medium,SWE|ML|Data|Embedded|Firmware|Robotics|Cybersecurity,custom,https://careers.rtx.com,,no
+Lockheed Martin,Aerospace,Medium,SWE|ML|Data|Embedded|Firmware|Robotics|Cybersecurity,eightfold,https://www.lockheedmartin.com/en-us/careers/index.html,lockheedmartin.eightfold.ai|lockheedmartin.com,no
+L3Harris,Defense,Medium,SWE|ML|Data|Embedded|Firmware|Robotics|Cybersecurity,custom,https://careers.l3harris.com,,no
+Honeywell,Manufacturing,Medium,SWE|ML|Data|Embedded|Firmware|Robotics|Cybersecurity,oracle_orc,https://careers.honeywell.com,careers.honeywell.com|ibqbjb.fa.ocs.oraclecloud.com|CX_1|Honeywell,no
+3M,Manufacturing,Medium,SWE|Data|Cybersecurity,custom,https://3m.wd1.myworkdayjobs.com/en/Search,,no
+Raymond James,Finance,Medium,SWE|Data|Cybersecurity,custom,https://www.raymondjames.com/careers,,no
+Capital One,Finance,Medium,SWE|ML|Data|Cybersecurity,custom,https://www.capitalonecareers.com,,no
+Publix,Retail,Medium,SWE|Data|Cybersecurity,custom,https://jobs.publix.com,,no
+Best Buy,Retail,Medium,SWE|ML|Data|Cybersecurity,custom,https://jobs.bestbuy.com,,no
+McKesson,Healthcare Distribution,Medium,SWE|Cybersecurity|Data,custom,https://careers.mckesson.com/en/early-talent,,no
+Cigna,Health Insurance,Medium,SWE|Data,custom,https://jobs.thecignagroup.com/us/en/technology-development-program,,no
+Liberty Mutual,Insurance,Medium,SWE|Data|Cybersecurity,custom,https://jobs.libertymutualgroup.com/careers/undergraduate-internships/,,no
+USAA,Insurance/Finance,Medium,SWE|Data|Cybersecurity,workday,https://usaa.wd1.myworkdayjobs.com/USAAJOBSWD,usaa.wd1.myworkdayjobs.com|usaa|USAAJOBSWD,no
+MassMutual,Insurance/Finance,Medium,SWE|Data,custom,https://careers.massmutual.com/students,,no
+Northwestern Mutual,Insurance/Finance,Medium,SWE|Data,custom,https://careers.northwesternmutual.com/teams/internships/,,no
+Truist,Banking,Medium,SWE|Data|Cybersecurity,custom,https://careers.truist.com/us/en/early-career-listings-2026,,no
+Charles Schwab,Finance,Medium,SWE|Data,custom,https://www.schwabjobs.com/internship-academy,,no
+Edward Jones,Finance,Medium,SWE,custom,https://www.edwardjones.com/us-en/about-us/careers,,no
+Southwest Airlines,Airlines,Medium,SWE|Data,custom,https://careers.southwestair.com/us/en/programs,,no
+FedEx,Logistics,Medium,SWE|Data,custom,https://careers.fedex.com/career-areas/student-programs/jobs,,no
+Home Depot,Retail,Medium,SWE|Data|ML,workday,https://homedepot.wd5.myworkdayjobs.com/CareerDepot,homedepot.wd5.myworkdayjobs.com|homedepot|CareerDepot,no
+Lowe's,Retail,Medium,SWE|Data,custom,https://talent.lowes.com/us/en/internships,,no
+Dick's Sporting Goods,Retail,Medium,SWE|Cybersecurity|Data,custom,https://www.dickssportinggoods.jobs/students-grads/,,no
+Kroger,Retail/Grocery,Medium,SWE|Data,custom,https://www.krogerfamilycareers.com/en/sites/CX_2001/pages/5015,,no
+Illinois Tool Works,Manufacturing,Medium,SWE|Embedded,custom,https://jobs.itw.com,,no
+GE Aerospace,Aerospace,Medium,SWE|Embedded|Firmware,custom,https://careers.geaerospace.com/global/en/us-internships,,no
+Boeing,Aerospace,Medium,SWE|Embedded|Data,custom,https://jobs.boeing.com/category/internship-jobs/185/9287/1,,no
+Duke Energy,Energy/Utilities,Medium,SWE|Data|Cybersecurity,custom,https://dukeenergy.wd1.myworkdayjobs.com/search,,no
+UnitedHealth Group,Healthcare,Medium,SWE|Data|ML,custom,https://www.unitedhealthgroup.com/careers,,no
+Parker Hannifin,Manufacturing,Medium,SWE|Embedded|Data,custom,https://www.parker.com/us/en/careers/internships.html,,no
+Eaton,Manufacturing,Medium,SWE|Embedded|Data,eightfold,https://www.eaton.com/us/en-us/company/careers/university-students.html,eaton.eightfold.ai|eaton.com,no
+Mercury Insurance,Insurance,Medium,Data|SWE,custom,https://www.mercuryinsurance.com/about/careers-jobs/early-careers/internships.html,,no
+PepsiCo,Consumer Goods,Medium,SWE|Data,custom,https://www.pepsicojobs.com/internshipsprograms/jobs,,no
+Procter & Gamble,Consumer Goods,Medium,SWE|Data|ML,custom,https://www.pgcareers.com/global/en/internships,,no
+Northrop Grumman,Defense,High,SWE|Cybersecurity|Data|Embedded,eightfold,https://jobs.northropgrumman.com/careers,jobs.northropgrumman.com|ngc.com,no
+General Dynamics,Defense,High,SWE|Cybersecurity|Embedded,custom,https://www.gd.com/careers/interns,,no
+General Dynamics IT,Defense,Medium,SWE|Data|Cybersecurity,workday,https://gdit.wd5.myworkdayjobs.com/External_Career_Site,gdit.wd5.myworkdayjobs.com|gdit|External_Career_Site,no
+BAE Systems Inc,Defense,High,SWE|Cybersecurity|Embedded|Data,custom,https://jobs.baesystems.com/global/en/leap,,no
+Huntington Ingalls Industries,Defense,High,SWE|Cybersecurity|Data,successfactors,https://careers.huntingtoningalls.com/search/?q=intern,careers.huntingtoningalls.com,no
+HII Mission Technologies,Defense,High,SWE|ML|Data|Cybersecurity,successfactors,https://jobs.hii-tsd.com/search/?q=intern,jobs.hii-tsd.com,no
+Leidos,Defense,Medium,SWE|ML|Data|Cybersecurity,workday,https://leidos.wd5.myworkdayjobs.com/External,leidos.wd5.myworkdayjobs.com|leidos|External,no
+Booz Allen Hamilton,Defense,Medium,SWE|Data|Cybersecurity,workday,https://bah.wd1.myworkdayjobs.com/BAH_Jobs,bah.wd1.myworkdayjobs.com|bah|BAH_Jobs,no
+SAIC,Defense,Medium,SWE|Data|Cybersecurity,custom,https://jobs.saic.com/search/jobs?q=intern,,no
+CACI International,Defense,Medium,SWE|Data|Cybersecurity,eightfold,https://careers.caci.com/global/en/early-career-internships,caci.eightfold.ai|caci.com,no
+Textron Systems,Defense,Medium,SWE|Embedded|Robotics,taleo,https://textron.taleo.net/careersection/textron/jobsearch.ftl?lang=en&keyword=intern,textron.taleo.net|textron|8140753014,no
+Leonardo DRS,Defense,Medium,SWE|Embedded|Firmware,custom,https://careers.leonardodrs.com/go/Internships/9729000/,,no
+Kratos Defense,Defense,Medium,SWE|Cybersecurity|Embedded,custom,https://kratosdefense.submit4jobs.com/,,no
+Mercury Systems,Defense,Medium,SWE|Embedded|Firmware|Hardware,adp,https://myjobs.adp.com/mercurysystemscareers/cx/job-listing?c=1162151&d=ExternalCareerSite,mercurysystemscareers|1162151,no
+ManTech,Defense,Medium,SWE|Cybersecurity|Data,custom,https://careers.mantech.com/en_US/careers/SearchJobs/intern?listFilterMode=1&jobRecordsPerPage=200,,no
+Parsons Corporation,Defense,Medium,SWE|Data|Robotics,workday,https://parsons.wd5.myworkdayjobs.com/Search,parsons.wd5.myworkdayjobs.com|parsons|Search,no
+Peraton,Defense,Medium,SWE|Cybersecurity|Data,custom,https://www.careers.peraton.com/students-early-career,,no
+MITRE Corporation,Defense Research,Medium,SWE|ML|Data|Cybersecurity,custom,https://careers.mitre.org/us/en/search-results?keywords=intern,,no
+Johns Hopkins Applied Physics Laboratory,Defense Research,Medium,SWE|ML|Data|Robotics,jibe,https://careers.jhuapl.edu/internships,careers.jhuapl.edu,no
+Regeneron,Biotech,High,SWE|ML|Data,workday,https://regeneron.wd1.myworkdayjobs.com/Careers,regeneron.wd1.myworkdayjobs.com|regeneron|Careers,yes
+ModMed,Health Tech,High,SWE|ML|Data,workday,https://modmed.wd501.myworkdayjobs.com/ModMed12,modmed.wd501.myworkdayjobs.com|modmed|ModMed12,yes
+Abbott,Medtech,High,SWE|Data|Embedded|Firmware,workday,https://abbott.wd5.myworkdayjobs.com/abbottcareers,abbott.wd5.myworkdayjobs.com|abbott|abbottcareers,yes
+Stryker,Medtech,High,SWE|Embedded|Firmware|Robotics,workday,https://stryker.wd1.myworkdayjobs.com/StrykerCareers,stryker.wd1.myworkdayjobs.com|stryker|StrykerCareers,yes
+Philips,Medtech,High,SWE|ML|Data|Embedded,workday,https://philips.wd3.myworkdayjobs.com/jobs-and-careers,philips.wd3.myworkdayjobs.com|philips|jobs-and-careers,yes
+GE HealthCare,Medtech,High,SWE|ML|Data|Embedded,workday,https://gehc.wd5.myworkdayjobs.com/GEHC_ExternalSite,gehc.wd5.myworkdayjobs.com|gehc|GEHC_ExternalSite,yes
+Bristol Myers Squibb,Pharma,High,SWE|ML|Data,workday,https://bristolmyerssquibb.wd5.myworkdayjobs.com/bms,bristolmyerssquibb.wd5.myworkdayjobs.com|bristolmyerssquibb|bms,yes
+Insulet,Medtech,High,SWE|Data|Embedded|Firmware,workday,https://insulet.wd5.myworkdayjobs.com/insuletcareers,insulet.wd5.myworkdayjobs.com|insulet|insuletcareers,yes
+Danaher,Life Sciences,High,SWE|Data|Embedded,workday,https://danaher.wd1.myworkdayjobs.com/DanaherJobs,danaher.wd1.myworkdayjobs.com|danaher|DanaherJobs,yes
+Medtronic,Medtech,High,SWE|ML|Data|Embedded|Firmware|Robotics,workday,https://medtronic.wd1.myworkdayjobs.com/MedtronicCareers,medtronic.wd1.myworkdayjobs.com|medtronic|MedtronicCareers,yes
+Pfizer,Pharma,High,SWE|ML|Data,workday,https://pfizer.wd1.myworkdayjobs.com/PfizerCareers,pfizer.wd1.myworkdayjobs.com|pfizer|PfizerCareers,yes
+Edwards Lifesciences,Medtech,High,SWE|Data|Embedded|Firmware,workday,https://edwards.wd5.myworkdayjobs.com/EdwardsCareers,edwards.wd5.myworkdayjobs.com|edwards|EdwardsCareers,yes
+Dexcom,Medtech,High,SWE|ML|Data|Embedded|Firmware,workday,https://dexcom.wd1.myworkdayjobs.com/Dexcom,dexcom.wd1.myworkdayjobs.com|dexcom|Dexcom,yes
+Boston Scientific,Medtech,High,SWE|Data|Embedded|Firmware,successfactors,https://jobs.bostonscientific.com/search/?q=intern,jobs.bostonscientific.com,yes
+Merck,Pharma,High,SWE|ML|Data,workday,https://msd.wd5.myworkdayjobs.com/SearchJobs,msd.wd5.myworkdayjobs.com|msd|SearchJobs,yes
+Johnson & Johnson,Medtech/Pharma,High,SWE|ML|Data|Embedded|Robotics,workday,https://jj.wd5.myworkdayjobs.com/jj,jj.wd5.myworkdayjobs.com|jj|jj,yes
+Amgen,Biotech,High,SWE|ML|Data,workday,https://amgen.wd1.myworkdayjobs.com/Careers,amgen.wd1.myworkdayjobs.com|amgen|Careers,yes
+Veeva Systems,Health Tech,High,SWE|Data,custom,https://careers.veeva.com/job-search-results/?search=intern,,no
+Cook Medical,Medtech,Medium,SWE|Data|Embedded,custom,https://americas-cookmedical.icims.com/jobs/search?ss=1&searchKeyword=intern,,no
+Oura,Health Wearables,High,SWE|ML|Data|Embedded|Firmware,greenhouse,https://job-boards.greenhouse.io/oura,oura,no
+Zimmer Biomet,Medtech,Medium,SWE|Data|Robotics,custom,https://careers.zimmerbiomet.com/us/en/search-results?keywords=intern,,yes
+Becton Dickinson,Medtech,High,SWE|Data|Embedded|Firmware,workday,https://bdx.wd1.myworkdayjobs.com/EXTERNAL_CAREER_SITE_USA,bdx.wd1.myworkdayjobs.com|bdx|EXTERNAL_CAREER_SITE_USA,yes
+Intuitive Surgical,Medtech,High,SWE|ML|Embedded|Firmware|Robotics,custom,https://careers.intuitive.com/en/jobs/?search=intern,,yes
+Tempus AI,Health Tech,High,SWE|ML|Data,workday,https://tempus.wd5.myworkdayjobs.com/tempus_careers,tempus.wd5.myworkdayjobs.com|tempus|tempus_careers,no
+Eli Lilly,Pharma,High,SWE|ML|Data,workday,https://lilly.wd115.myworkdayjobs.com/LLY,lilly.wd115.myworkdayjobs.com|lilly|LLY,yes
+Arthrex,Medtech,Medium,SWE|Data|Robotics,successfactors,https://careers.arthrex.com/search/?q=intern,careers.arthrex.com,yes
+Epic Systems,Health Tech,High,SWE|Data,custom,https://careers.epic.com/jobs/,,yes
+Siemens Healthineers,Medtech,High,SWE|ML|Data|Embedded,workday,https://onehealthineers.wd3.myworkdayjobs.com/SHSJB,onehealthineers.wd3.myworkdayjobs.com|onehealthineers|SHSJB,yes

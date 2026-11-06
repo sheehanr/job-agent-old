@@ -1,6 +1,5 @@
 import sys
 import os
-import re
 from datetime import date
 
 import requests
@@ -9,8 +8,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from role_classifier import classify_role
 from url_utils import clean_url
-
-_INTERN_WORD_RE = re.compile(r"\bintern(ship)?s?\b", re.IGNORECASE)
+from internship_terms import INTERN_SEARCH_TERMS, is_internship_title
 
 
 def get_oracle_orc_internships(
@@ -54,92 +52,97 @@ def get_oracle_orc_internships(
     internships = []
     seen_job_ids = set()
 
-    offset = 0
     limit = 25
     max_pages = 10  # safety cap
 
-    for _ in range(max_pages):
+    # One search per term (intern, co-op, coop, ...); the seen-id set
+    # dedupes postings that match more than one.
+    for term in INTERN_SEARCH_TERMS:
 
-        finder = (
-            f"findReqs;siteNumber={site_number},"
-            f"keyword=intern,limit={limit},offset={offset}"
-        )
+        offset = 0
 
-        params = {
-            "onlyData": "true",
-            "expand": "requisitionList.secondaryLocations",
-            "finder": finder,
-        }
+        for _ in range(max_pages):
 
-        try:
-            response = requests.get(
-                url,
-                params=params,
-                headers={"User-Agent": "Mozilla/5.0"},
-                timeout=10
+            finder = (
+                f"findReqs;siteNumber={site_number},"
+                f"keyword={term},limit={limit},offset={offset}"
             )
-            response.raise_for_status()
 
-            data = response.json()
+            params = {
+                "onlyData": "true",
+                "expand": "requisitionList.secondaryLocations",
+                "finder": finder,
+            }
 
-        except Exception as e:
-            print(
-                f"Error fetching jobs for "
-                f"{company_name}: {e}"
-            )
-            break
+            try:
+                response = requests.get(
+                    url,
+                    params=params,
+                    headers={"User-Agent": "Mozilla/5.0"},
+                    timeout=10
+                )
+                response.raise_for_status()
 
-        items = data.get("items") or []
+                data = response.json()
 
-        if not items:
-            break
+            except Exception as e:
+                print(
+                    f"Error fetching jobs for "
+                    f"{company_name}: {e}"
+                )
+                break
 
-        item = items[0]
-        requisitions = item.get("requisitionList") or []
+            items = data.get("items") or []
 
-        if not requisitions:
-            break
+            if not items:
+                break
 
-        for req in requisitions:
+            item = items[0]
+            requisitions = item.get("requisitionList") or []
 
-            title = req.get("Title", "") or ""
+            if not requisitions:
+                break
 
-            if not _INTERN_WORD_RE.search(title):
-                continue
+            for req in requisitions:
 
-            job_id = req.get("Id")
+                title = req.get("Title", "") or ""
 
-            if job_id is not None:
-
-                if job_id in seen_job_ids:
+                if not is_internship_title(title):
                     continue
 
-                seen_job_ids.add(job_id)
+                job_id = req.get("Id")
 
-            application_url = clean_url(
-                f"https://{career_site_host}/en/sites/"
-                f"{site_name}/job/{job_id}"
-            )
+                if job_id is not None:
 
-            internships.append({
-                "company": company_name,
-                "title": title,
-                "location": req.get("PrimaryLocation", "Unknown"),
-                "role_type": classify_role(title),
-                "application_url": application_url,
-                "external_job_id": (
-                    str(job_id) if job_id is not None else None
-                ),
-                "source_platform": "oracle_orc",
-                "date_discovered": date.today().isoformat(),
-            })
+                    if job_id in seen_job_ids:
+                        continue
 
-        total_count = item.get("TotalJobsCount", 0)
+                    seen_job_ids.add(job_id)
 
-        offset += limit
+                application_url = clean_url(
+                    f"https://{career_site_host}/en/sites/"
+                    f"{site_name}/job/{job_id}"
+                )
 
-        if offset >= total_count:
-            break
+                internships.append({
+                    "company": company_name,
+                    "title": title,
+                    "location": req.get("PrimaryLocation", "Unknown"),
+                    "role_type": classify_role(title),
+                    "application_url": application_url,
+                    "external_job_id": (
+                        str(job_id) if job_id is not None else None
+                    ),
+                    "source_platform": "oracle_orc",
+                    "date_discovered": date.today().isoformat(),
+                })
+
+            total_count = item.get("TotalJobsCount", 0)
+
+            offset += limit
+
+            if offset >= total_count:
+                break
 
     return internships
 

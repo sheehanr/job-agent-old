@@ -133,3 +133,35 @@ def test_grad_only_titles_detected(title):
 ])
 def test_undergrad_titles_not_flagged(title):
     assert is_grad_only(title) is False
+
+
+def test_target_roles():
+
+    from role_classifier import TARGET_ROLES
+
+    assert TARGET_ROLES == {
+        "SWE", "ML", "Data", "Embedded", "Firmware", "Robotics"
+    }
+
+
+@pytest.mark.parametrize("title, expected", [
+    ("Business Analytics Intern", "Data"),
+    ("Data Analytics & AI Innovation Intern", "Data"),
+    ("Health Informatics Intern", "Data"),
+    ("Bioinformatics Co-op", "Data"),
+    ("Digital Analytics Intern", "Data"),
+    ("Information Technology Intern", "SWE"),
+    ("Digital Health Intern", "SWE"),
+    ("Digital Technology Co-op", "SWE"),
+    ("IT Intern", "SWE"),
+    ("2027 IT Co-op - Infrastructure", "SWE"),
+    ("Software Engineer Coop", "SWE"),
+    # EE terms still classify as (non-target) Hardware.
+    ("Digital Design Intern", "Hardware"),
+    ("RF Engineer Intern", "Hardware"),
+    # Lowercase "it" isn't the IT abbreviation.
+    ("Make it happen intern", "Other"),
+])
+def test_tech_department_keywords(title, expected):
+
+    assert classify_role(title) == expected

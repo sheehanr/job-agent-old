@@ -22,7 +22,7 @@ def test_db():
 
 
 @pytest.mark.parametrize(
-    "role_type", ["SWE", "ML", "Embedded", "Firmware", "Robotics", "Hardware"]
+    "role_type", ["SWE", "ML", "Data", "Embedded", "Firmware", "Robotics"]
 )
 def test_alert_created_for_target_role(test_db, role_type):
 
@@ -41,7 +41,7 @@ def test_alert_created_for_target_role(test_db, role_type):
 
 @pytest.mark.parametrize(
     "role_type",
-    ["Cybersecurity", "Data", "Product", "Other"]
+    ["Cybersecurity", "Hardware", "Product", "Other"]
 )
 def test_no_alert_for_non_target_role(test_db, role_type):
 
@@ -182,5 +182,31 @@ def test_repost_of_recently_texted_role_does_not_alert_again(test_db):
 
     # A different role at the same company still alerts.
     assert database_monitor.create_alert_for_new_internship(
-        "Acme", "FPGA Intern", "Remote", "Hardware", db_path=test_db
+        "Acme", "Data Analytics Intern", "Remote", "Data", db_path=test_db
+    ) is not None
+
+
+@pytest.mark.parametrize("location", [
+    "Suzhou, China",
+    "Milano",
+    "HUN02-01-Budapest-Vaci Greens C",
+    "Toronto, ON, CA",
+])
+def test_no_alert_for_known_non_us_location(test_db, location):
+
+    assert database_monitor.create_alert_for_new_internship(
+        "Acme", "SWE Intern", location, "SWE", db_path=test_db
+    ) is None
+
+
+@pytest.mark.parametrize("location", [
+    "Boca Raton, FL",
+    "Remote - US",
+    "Unknown",
+    "4 Locations",
+])
+def test_alert_for_us_or_unknown_location(test_db, location):
+
+    assert database_monitor.create_alert_for_new_internship(
+        "Acme", "SWE Intern", location, "SWE", db_path=test_db
     ) is not None

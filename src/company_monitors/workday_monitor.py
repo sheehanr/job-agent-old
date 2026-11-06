@@ -1,6 +1,5 @@
 import sys
 import os
-import re
 from datetime import date
 
 import requests
@@ -9,10 +8,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from role_classifier import classify_role
 from url_utils import clean_url
-
-_INTERN_WORD_RE = re.compile(
-    r"\bintern(ship)?s?\b|\bco-?op\b", re.IGNORECASE
-)
+from internship_terms import INTERN_SEARCH_TERMS, is_internship_title
 
 
 def get_workday_internships(company_name, host, tenant, site, max_pages=10):
@@ -26,19 +22,37 @@ def get_workday_internships(company_name, host, tenant, site, max_pages=10):
             "Leidos", "leidos.wd5.myworkdayjobs.com", "leidos", "External"
         )
 
-    Workday's search is relevance-ranked and fuzzy ("intern" also pulls
-    in "International ..." roles), so actual internships come first and
-    titles are re-filtered with a word-boundary regex. Paging stops at
+    Runs one search per term in INTERN_SEARCH_TERMS (intern, co-op,
+    coop, ...) and dedupes by posting path. Workday's search is
+    relevance-ranked and fuzzy ("intern" also pulls in "International
+    ..." roles), so actual internships come first and titles are
+    re-filtered with a word-boundary regex. Paging for a term stops at
     the first page with no internship titles at all, since everything
     after it is just weaker keyword matches.
     """
 
     url = f"https://{host}/wday/cxs/{tenant}/{site}/jobs"
 
-    page_size = 20  # Workday rejects anything larger
-
     internships = []
     seen_paths = set()
+
+    # Each term is its own search (Workday doesn't stem "intern" to
+    # "co-op"/"coop"); seen_paths dedupes across them.
+    for term in INTERN_SEARCH_TERMS:
+
+        _search_term(
+            company_name, host, site, url, term, max_pages,
+            internships, seen_paths
+        )
+
+    return internships
+
+
+def _search_term(
+    company_name, host, site, url, term, max_pages, internships, seen_paths
+):
+
+    page_size = 20  # Workday rejects anything larger
 
     for page in range(max_pages):
 
@@ -49,7 +63,7 @@ def get_workday_internships(company_name, host, tenant, site, max_pages=10):
                     "appliedFacets": {},
                     "limit": page_size,
                     "offset": page * page_size,
-                    "searchText": "intern",
+                    "searchText": term,
                 },
                 headers={"User-Agent": "Mozilla/5.0"},
                 timeout=15
@@ -59,8 +73,8 @@ def get_workday_internships(company_name, host, tenant, site, max_pages=10):
             postings = response.json().get("jobPostings") or []
 
         except Exception as e:
-            print(f"Error fetching jobs for {company_name}: {e}")
-            break
+            print(f"Error fetching jobs for {company_name} ({term!r}): {e}")
+            return
 
         page_matches = 0
 
@@ -68,7 +82,7 @@ def get_workday_internships(company_name, host, tenant, site, max_pages=10):
 
             title = posting.get("title", "") or ""
 
-            if not _INTERN_WORD_RE.search(title):
+            if not is_internship_title(title):
                 continue
 
             page_matches += 1
@@ -98,9 +112,7 @@ def get_workday_internships(company_name, host, tenant, site, max_pages=10):
             })
 
         if len(postings) < page_size or page_matches == 0:
-            break
-
-    return internships
+            return
 
 
 if __name__ == "__main__":

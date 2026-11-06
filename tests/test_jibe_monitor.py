@@ -174,3 +174,33 @@ def test_no_internships_returns_empty_list(monkeypatch):
     results = jibe_monitor.get_jibe_internships("Acme", "careers.acme.com")
 
     assert results == []
+
+
+def test_coop_found_by_keyword_search_even_when_intern_tag_works(monkeypatch):
+    """Co-ops aren't always tagged Intern - the per-term keyword searches
+    still pick them up, without duplicating the tagged internships."""
+
+    coop = {"data": {
+        "title": "Firmware Engineer Coop",
+        "req_id": "30001",
+        "tags3": ["Co-op"],
+        "full_location": "Olathe, KS",
+        "apply_url": "https://careers.acme.com/jobs/30001",
+    }}
+
+    def fake_get(url, params, headers, timeout):
+        if "tags3" in params:
+            return FakeResponse(FIXTURE)
+        if params["keywords"] == "coop":
+            return FakeResponse({"jobs": [coop] + FIXTURE["jobs"]})
+        return FakeResponse(FIXTURE)
+
+    monkeypatch.setattr(jibe_monitor.requests, "get", fake_get)
+
+    results = jibe_monitor.get_jibe_internships("Acme", "careers.acme.com")
+
+    titles = [r["title"] for r in results]
+
+    assert "Firmware Engineer Coop" in titles
+    assert len(titles) == len(set(titles)) == 4
+    assert "Senior Engineer" not in titles

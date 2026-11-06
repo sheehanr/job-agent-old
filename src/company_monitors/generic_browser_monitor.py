@@ -7,8 +7,13 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from role_classifier import classify_role
 from url_utils import clean_url
+from internship_terms import is_internship_title
 
-_INTERN_WORD_RE = re.compile(r"\bintern(ship)?s?\b", re.IGNORECASE)
+# Typed into the site's own search box when the page doesn't already list
+# postings. A subset of INTERN_SEARCH_TERMS: each browser search costs
+# several seconds, and site search boxes generally treat "co-op"/"coop"/
+# "co op" alike.
+BROWSER_SEARCH_TERMS = ("intern", "co-op")
 
 # Generic nav/category link text that isn't an actual job posting -
 # e.g. Target's and Chipotle's "Internships" nav link to a category page,
@@ -22,6 +27,9 @@ _GENERIC_LABELS = {
     "internship program", "internship programs",
     "student internships", "internship opportunities",
     "browse internships", "current internships",
+    "co-op", "co-ops", "coop", "co-op program", "co-op programs",
+    "internships & co-ops", "internships and co-ops",
+    "co-ops & internships", "co-ops and internships",
 }
 
 _SEARCH_BOX_SELECTORS = [
@@ -95,11 +103,11 @@ def _goto_with_retries(page, url, max_retries=1, timeout_ms=20000):
     raise last_error
 
 
-def _try_search_for_interns(page):
+def _try_search_for_interns(page, term="intern"):
     """
     Best-effort: if the loaded page has a job-search box (the career_url
     is often a marketing landing page, not the job listing itself), type
-    "intern" and submit. Returns True if a search was attempted.
+    `term` and submit. Returns True if a search was attempted.
     """
 
     for selector in _SEARCH_BOX_SELECTORS:
@@ -110,7 +118,7 @@ def _try_search_for_interns(page):
             if box.count() == 0:
                 continue
 
-            box.fill("intern", timeout=5000)
+            box.fill(term, timeout=5000)
             box.press("Enter")
             page.wait_for_timeout(2000)
 
@@ -179,7 +187,7 @@ def _internships_from_links(links, company_name):
 
     for text, href in links:
 
-        if not _INTERN_WORD_RE.search(text):
+        if not is_internship_title(text):
             continue
 
         if not _looks_like_real_posting(text, href):
@@ -232,11 +240,19 @@ def _scrape_company_page(page, company_name, career_url):
     if internships:
         return internships
 
-    if _try_search_for_interns(page):
+    seen_urls = set()
 
-        internships = _internships_from_links(
+    for term in BROWSER_SEARCH_TERMS:
+
+        if not _try_search_for_interns(page, term):
+            break  # no search box on this page at all
+
+        for internship in _internships_from_links(
             _extract_links(page), company_name
-        )
+        ):
+            if internship["application_url"] not in seen_urls:
+                seen_urls.add(internship["application_url"])
+                internships.append(internship)
 
     return internships
 
@@ -249,11 +265,13 @@ def get_browser_scraped_internships(company_name, career_url, browser=None):
 
     Loads career_url, attempts a job-search box submission (many career
     pages are landing pages, not the listing itself), then extracts links
-    whose text contains "intern"/"internship" as a whole word and isn't a
-    generic nav label like "Internships" or "Search Jobs".
+    whose text contains "intern"/"internship"/"co-op" as a whole word and
+    isn't a generic nav label like "Internships" or "Search Jobs".
 
-    Location is always "Unknown" - unlike the structured-API adapters,
-    generic link scraping has no reliable way to extract a location field.
+    Location is always "Unknown" here - generic link scraping has no
+    reliable way to extract a location field. For new postings that would
+    alert, the monitor service then opens the posting page and reads its
+    JSON-LD location (see posting_location.py).
     application_url quality varies by site; some may point to a search
     results page rather than the specific posting if the link itself
     isn't a direct job-detail URL.

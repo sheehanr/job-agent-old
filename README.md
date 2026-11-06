@@ -1,11 +1,12 @@
 # Hidden Gem Internship Discovery Agent
 
-An agent that automatically discovers technical internships at recognizable
-**non-Big-Tech** companies — Target, Chipotle, Progressive, State Farm, John
-Deere, Garmin, Hudl, and similar "hidden gem" employers that CS/CE students
-don't usually think to check. It's tailored to one person (me): only
-SWE, ML, Embedded, Firmware, Robotics, and Hardware/FPGA internships trigger a
-text. It is a discovery and alerting tool, not an application tracker: it does not track saved jobs, applied status, or
+An agent that automatically discovers technical internships and co-ops at
+**healthcare and medtech** companies — Medtronic, Stryker, Abbott, Insulet,
+Intuitive Surgical, Epic, Regeneron, Philips, GE HealthCare, J&J, Merck and
+more. (The original non-Big-Tech registry - Target, State Farm, John Deere,
+etc. - is still in the CSV, disabled.) It's tailored to one person (me): only
+US-located SWE, ML, Data, Embedded, Firmware, and Robotics internships/co-ops
+trigger a phone alert. It is a discovery and alerting tool, not an application tracker: it does not track saved jobs, applied status, or
 interview history.
 
 ## Architecture
@@ -41,9 +42,24 @@ A repost of a role I was already texted about (same company + title) in the
 last 14 days doesn't text again.
 
 Every posting is stored and classified by `role_classifier.py`, but only
-roles in `TARGET_ROLES` (`SWE`, `ML`, `Embedded`, `Firmware`, `Robotics`, `Hardware`, defined in
-`src/role_classifier.py`) create an alert and a text. Edit that set to
-change what you get texted about.
+roles in `TARGET_ROLES` (`SWE`, `ML`, `Data`, `Embedded`, `Firmware`,
+`Robotics`, defined in `src/role_classifier.py`) create an alert. Edit that
+set to change what you get alerted about. `Hardware` (EE/RF/FPGA) is still
+classified but not targeted.
+
+**Internships and co-ops.** `src/internship_terms.py` defines what counts:
+every keyword-search adapter runs one search per term (`intern`,
+`internship`, `co-op`, `coop`, `co op`, `cooperative education`), dedupes
+the results, and re-filters titles with a word-boundary regex.
+
+**US only.** `src/location_filter.py` classifies each location as US,
+non-US, or unknown. Known non-US postings never alert. For a new posting
+that would alert but whose location is unknown (e.g. Workday's
+"4 Locations", or the browser scraper's "Unknown"), the monitor looks the
+location up from the posting itself (Workday's job-detail API, or the
+page's schema.org JSON-LD) before deciding. If it's still unknown the alert
+goes out labelled "(location unknown)", and the run summary lists which
+companies that happened for.
 
 ## Setup
 
@@ -78,8 +94,19 @@ python src/internship_monitor_service.py
 ```
 
 Prints a run summary (companies checked/successful/failed/skipped, jobs
-retrieved, new internships inserted, alerts created). Safe to re-run on a
-schedule — only genuinely new postings create new rows and alerts.
+retrieved, new internships inserted, alerts created, alerts dropped as
+non-US). Safe to re-run on a schedule — only genuinely new postings create
+new rows and alerts.
+
+**First run / after adding companies:** run once with `--baseline`. It does
+a full scan but marks every queued alert as sent *without* notifying, so
+your phone isn't flooded with every posting that's already open:
+
+```powershell
+python src/internship_monitor_service.py --baseline
+```
+
+In GitHub Actions, use **Run workflow** with the *baseline* box ticked.
 
 To run the Greenhouse adapter directly against one company:
 
@@ -104,15 +131,26 @@ after running the monitor to pick up new rows without restarting Streamlit.
 python -m pytest tests/ -v
 ```
 
-Covers role classification, URL cleanup, mocked Greenhouse parsing,
-internship dedup/upsert behavior, alert-only-on-new-job logic, and
-target-role alert filtering.
+Covers role classification, intern/co-op title matching, US location
+classification, posting-page location lookup, mocked adapter parsing,
+internship dedup/upsert behavior, alert-only-on-new-job logic, target-role
+and non-US alert filtering, ntfy/SMS sending, and `--baseline`.
 
 ## Environment variables
 
-SMS alerts are optional but wired into the pipeline:
-`internship_monitor_service.py` calls `send_sms_alert()` every time a new
-internship alert is created (not just when the DB alert is saved). Sending
+Alerts are optional. Each run sends **one** notification listing every new
+posting with its apply link, only between 8am and 10pm Eastern (alerts found
+overnight are held until the first run after 8am).
+
+**Push notifications (ntfy, recommended).** Set `NTFY_TOPIC` and alerts go
+out as an [ntfy.sh](https://ntfy.sh) push instead of a text. Install the
+ntfy app (iOS/Android), subscribe to the same topic name, done. Anyone who
+knows the topic name can read it, so use a long random one (e.g.
+`python -c "import secrets; print('hga-' + secrets.token_hex(16))"`).
+Optional: `NTFY_SERVER` (self-hosted ntfy) and `NTFY_TOKEN` (access token
+for a protected topic). Test with `python src/sms_alerts.py`.
+
+**SMS fallback.** If `NTFY_TOPIC` is not set, alerts are sent by text. Sending
 uses a free email-to-SMS carrier gateway (e.g. `number@tmomail.net` for
 T-Mobile) via Gmail SMTP - not a paid SMS API - since this is a
 single-user personal alert, not a product sending texts to other people.
@@ -126,8 +164,8 @@ Copy `.env.example` to `.env` and set:
 - `SMS_CARRIER_GATEWAY` - your carrier's email-to-SMS domain (`vtext.com`
   for Verizon, `txt.att.net` for AT&T, `tmomail.net` for T-Mobile, etc.)
 
-If unset, `send_sms_alert()` prints a message and skips sending rather than
-failing - the rest of the pipeline (DB alerts, dashboard) works either way.
+If neither is configured, sending is skipped rather than failing - alerts
+stay queued in the DB and the dashboard works either way.
 `.env` is gitignored — never commit real credentials.
 
 ## Supported platforms
@@ -143,12 +181,13 @@ platform's own API). `platform_identifier` format in parentheses:
   Martin, Eaton, CACI, Northrop Grumman (`jobs.northropgrumman.com|ngc.com`).
 - **Oracle Recruiting Cloud** (`career_site_host|tenant_host|site_number|site_name`)
   - Honeywell.
-- **Workday** (`<tenant>.wd<N>.myworkdayjobs.com|tenant|site`) - Leidos,
-  Parsons, General Dynamics IT, Booz Allen, Home Depot, USAA. Find the
-  tenant/site in any job link on the company's careers site.
-- **SuccessFactors Career Site Builder** (`host`) - HII (shipbuilding and
-  Mission Technologies sites). Parses the server-rendered `/search/?q=intern`
-  page.
+- **Workday** (`<tenant>.wd<N>.myworkdayjobs.com|tenant|site`) - most of
+  the healthcare list (Medtronic, Stryker, Abbott, J&J, Merck, Pfizer,
+  Lilly, BD, Dexcom, Regeneron, ...). Find the tenant/site in any job link
+  on the company's careers site.
+- **SuccessFactors Career Site Builder** (`host`) - Boston Scientific,
+  Arthrex, HII. Parses the server-rendered `/search/?q=<term>` page (both
+  the table and the tile layouts).
 - **Taleo** (`host|career_section|portal_id`) - Textron Systems. The
   `portal` id is on the `rest/jobboard/searchjobs` request in the browser's
   network tab.
@@ -156,19 +195,21 @@ platform's own API). `platform_identifier` format in parentheses:
   Mercury Systems. ADP's API needs a session token, so the page is loaded
   in the headless browser and its own API response is read.
 
-Every keyword-search adapter re-filters titles with a word-boundary
-`intern|internship|co-op` regex, so "Internal Auditor" / "International"
+Every adapter filters titles with the shared word-boundary regex in
+`src/internship_terms.py`, so "Internal Auditor" / "International"
 results don't leak through.
 
 Best-effort fallback for everything else:
 
 - **`custom`** - `generic_browser_monitor.py` loads `career_url` in headless
   Chromium (including iframes), takes links whose text contains
-  "intern"/"internship" and whose URL has a 4+ digit job id, and if there
-  are none, tries the page's job-search box. Point `career_url` at the
-  site's intern search-results page when one exists (MITRE, SAIC, ManTech
-  do this) - landing pages often have no job links at all. Location is
-  always "Unknown".
+  "intern"/"internship"/"co-op" and whose URL has a 4+ digit job id, and if
+  there are none, searches "intern" then "co-op" in the page's job-search
+  box. Point `career_url` at the site's intern search-results page when one
+  exists - landing pages often have no job links at all. Location comes
+  back "Unknown" and is looked up from the posting page for new alerts.
+  Used for Intuitive Surgical (SmartRecruiters), Zimmer Biomet (Phenom),
+  and Epic (Avature).
 
 ## Limitations
 

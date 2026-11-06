@@ -62,7 +62,8 @@ def test_parses_requisitions_and_pages(monkeypatch):
         "Textron Systems", "textron.taleo.net", "textron", "8140753014"
     )
 
-    assert calls == [1, 2]
+    # Same two pages once per search term; results deduped across terms.
+    assert calls == [1, 2] * len(taleo_monitor.INTERN_SEARCH_TERMS)
     assert [(r["title"], r["role_type"]) for r in results] == [
         ("2027 Intern - Autonomy Engineer (Air Systems)", "Robotics"),
         ("2027 Intern - Firmware Engineer (Weapons)", "Firmware"),

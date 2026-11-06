@@ -9,7 +9,20 @@ on:
     # 8am Eastern by the texting window in internship_monitor_service.py -
     # that check, not this cron, is what enforces quiet hours.
     - cron: "17 2,6,10,14,18,22 * * *"
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      baseline:
+        description: >-
+          Baseline run: scan everything and mark all queued alerts as
+          sent WITHOUT notifying (use once on first setup).
+        type: boolean
+        default: false
+      test_alert:
+        description: >-
+          Send one test notification (ntfy, or SMS if NTFY_TOPIC isn't
+          set) before the run, to check secrets and phone delivery.
+        type: boolean
+        default: false
 
 concurrency:
   group: monitor
@@ -37,13 +50,27 @@ jobs:
       - name: Install Playwright's Chromium (with OS deps)
         run: playwright install --with-deps chromium
 
-      - name: Run full monitor (all companies, including custom scraper)
+      - name: Send test notification
+        if: ${{ inputs.test_alert }}
         env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
           EMAIL_SENDER_ADDRESS: ${{ secrets.EMAIL_SENDER_ADDRESS }}
           EMAIL_APP_PASSWORD: ${{ secrets.EMAIL_APP_PASSWORD }}
           NOTIFICATION_PHONE_NUMBER: ${{ secrets.NOTIFICATION_PHONE_NUMBER }}
           SMS_CARRIER_GATEWAY: ${{ secrets.SMS_CARRIER_GATEWAY }}
-        run: python src/internship_monitor_service.py
+        run: python src/sms_alerts.py
+
+      - name: Run full monitor (all companies, including custom scraper)
+        env:
+          # ntfy push is used when NTFY_TOPIC is set; otherwise the
+          # email-to-SMS settings below are used.
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          EMAIL_SENDER_ADDRESS: ${{ secrets.EMAIL_SENDER_ADDRESS }}
+          EMAIL_APP_PASSWORD: ${{ secrets.EMAIL_APP_PASSWORD }}
+          NOTIFICATION_PHONE_NUMBER: ${{ secrets.NOTIFICATION_PHONE_NUMBER }}
+          SMS_CARRIER_GATEWAY: ${{ secrets.SMS_CARRIER_GATEWAY }}
+          BASELINE: ${{ inputs.baseline && '--baseline' || '' }}
+        run: python src/internship_monitor_service.py $BASELINE
 
       - name: Commit and push database changes (only if something changed)
         run: |

@@ -1,6 +1,5 @@
 import sys
 import os
-import re
 from datetime import date
 
 import requests
@@ -9,8 +8,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from role_classifier import classify_role
 from url_utils import clean_url
-
-_INTERN_WORD_RE = re.compile(r"\bintern(ship)?s?\b", re.IGNORECASE)
+from internship_terms import INTERN_SEARCH_TERMS, is_internship_title
 
 
 def get_eightfold_internships(company_name, api_host, company_domain):
@@ -34,88 +32,93 @@ def get_eightfold_internships(company_name, api_host, company_domain):
     internships = []
     seen_job_ids = set()
 
-    start = 0
     page_size = 10
     max_pages = 30  # safety cap - Eightfold has no larger page-size param
 
-    while start < page_size * max_pages:
+    # One search per term (intern, co-op, coop, ...); the seen-id set
+    # dedupes postings that match more than one.
+    for term in INTERN_SEARCH_TERMS:
 
-        params = {
-            "domain": company_domain,
-            "query": "intern",
-            "location": "",
-            "start": start,
-        }
+        start = 0
 
-        try:
-            response = requests.get(
-                url,
-                params=params,
-                headers={"User-Agent": "Mozilla/5.0"},
-                timeout=10
-            )
-            response.raise_for_status()
+        while start < page_size * max_pages:
 
-            data = response.json()
+            params = {
+                "domain": company_domain,
+                "query": term,
+                "location": "",
+                "start": start,
+            }
 
-        except Exception as e:
-            print(
-                f"Error fetching jobs for "
-                f"{company_name}: {e}"
-            )
-            break
+            try:
+                response = requests.get(
+                    url,
+                    params=params,
+                    headers={"User-Agent": "Mozilla/5.0"},
+                    timeout=10
+                )
+                response.raise_for_status()
 
-        positions = (data.get("data") or {}).get("positions") or []
+                data = response.json()
 
-        if not positions:
-            break
+            except Exception as e:
+                print(
+                    f"Error fetching jobs for "
+                    f"{company_name}: {e}"
+                )
+                break
 
-        for position in positions:
+            positions = (data.get("data") or {}).get("positions") or []
 
-            title = position.get("name", "") or ""
+            if not positions:
+                break
 
-            if not _INTERN_WORD_RE.search(title):
-                continue
+            for position in positions:
 
-            job_id = position.get("id")
+                title = position.get("name", "") or ""
 
-            if job_id is not None:
-
-                if job_id in seen_job_ids:
+                if not is_internship_title(title):
                     continue
 
-                seen_job_ids.add(job_id)
+                job_id = position.get("id")
 
-            locations = position.get("locations") or []
-            location = locations[0] if locations else "Unknown"
+                if job_id is not None:
 
-            position_url = position.get("positionUrl", "") or ""
+                    if job_id in seen_job_ids:
+                        continue
 
-            application_url = clean_url(
-                f"https://{api_host}{position_url}"
-                if position_url.startswith("/")
-                else position_url
-            )
+                    seen_job_ids.add(job_id)
 
-            internships.append({
-                "company": company_name,
-                "title": title,
-                "location": location,
-                "role_type": classify_role(title),
-                "application_url": application_url,
-                "external_job_id": (
-                    str(job_id) if job_id is not None else None
-                ),
-                "source_platform": "eightfold",
-                "date_discovered": date.today().isoformat(),
-            })
+                locations = position.get("locations") or []
+                location = locations[0] if locations else "Unknown"
 
-        total_count = (data.get("data") or {}).get("count", 0)
+                position_url = position.get("positionUrl", "") or ""
 
-        start += page_size
+                application_url = clean_url(
+                    f"https://{api_host}{position_url}"
+                    if position_url.startswith("/")
+                    else position_url
+                )
 
-        if start >= total_count:
-            break
+                internships.append({
+                    "company": company_name,
+                    "title": title,
+                    "location": location,
+                    "role_type": classify_role(title),
+                    "application_url": application_url,
+                    "external_job_id": (
+                        str(job_id) if job_id is not None else None
+                    ),
+                    "source_platform": "eightfold",
+                    "date_discovered": date.today().isoformat(),
+                })
+
+            total_count = (data.get("data") or {}).get("count", 0)
+
+            start += page_size
+
+            if start >= total_count:
+                break
 
     return internships
 

@@ -103,6 +103,17 @@ ROLE_KEYWORDS = [
         "data engineer",
         "data analytics",
         "data analyst",
+        "analytics",
+        "informatics",
+        "bioinformatics",
+    ]),
+    # Broad tech-department words. Checked after Data so "Digital
+    # Analytics Intern" is Data, and after Hardware so "Digital Design"
+    # (an EE/chip-design term) stays Hardware.
+    ("SWE", [
+        "information technology",
+        "information systems",
+        "digital",
     ]),
 ]
 
@@ -115,9 +126,14 @@ _ROLE_PATTERNS = [
 ]
 
 
+_IT_ABBREVIATION_RE = re.compile(r"(?<![A-Za-z])IT(?![A-Za-z])")
+
+
 # The role categories I actually want texts for. Every internship is
 # still stored and classified, but only these trigger an alert.
-TARGET_ROLES = {"SWE", "ML", "Embedded", "Firmware", "Robotics", "Hardware"}
+# Hardware is still classified (EE/RF/FPGA titles) but deliberately not
+# targeted - it mostly matched roles that aren't relevant to me.
+TARGET_ROLES = {"SWE", "ML", "Data", "Embedded", "Firmware", "Robotics"}
 
 
 def is_target_role(role_type):
@@ -182,5 +198,11 @@ def classify_role(title):
         if pattern.search(normalized):
 
             return category
+
+    # "IT Intern" / "2027 IT Co-op": the abbreviation only counts in
+    # uppercase, so the English word "it" doesn't.
+    if _IT_ABBREVIATION_RE.search(title):
+
+        return "SWE"
 
     return "Other"

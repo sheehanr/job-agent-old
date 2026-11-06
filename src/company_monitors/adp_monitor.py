@@ -6,10 +6,8 @@ from datetime import date
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from role_classifier import classify_role
+from internship_terms import is_internship_title
 
-_INTERN_WORD_RE = re.compile(
-    r"\bintern(ship)?s?\b|\bco-?op\b", re.IGNORECASE
-)
 
 _REQUISITIONS_API = "job-requisitions/apply-custom-filters"
 
@@ -68,7 +66,7 @@ def get_adp_internships(company_name, site_name, client_id, browser):
 
         title = req.get("publishedJobTitle") or req.get("jobTitle") or ""
 
-        if not _INTERN_WORD_RE.search(title):
+        if not is_internship_title(title):
             continue
 
         req_id = req.get("reqId") or req.get("clientRequisitionID")

@@ -1,6 +1,5 @@
 import sys
 import os
-import re
 from datetime import date
 
 import requests
@@ -9,18 +8,15 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from role_classifier import classify_role
 from url_utils import clean_url
-
-_INTERN_WORD_RE = re.compile(
-    r"\bintern(ship)?s?\b|\bco-?op\b", re.IGNORECASE
-)
+from internship_terms import INTERN_SEARCH_TERMS, is_internship_title
 
 
-def _keyword_search_jobs(url, company_name):
+def _keyword_search_jobs(url, company_name, term):
 
     try:
         response = requests.get(
             url,
-            params={"keywords": "intern", "page": 1, "limit": 100},
+            params={"keywords": term, "page": 1, "limit": 100},
             headers={"User-Agent": "Mozilla/5.0"},
             timeout=10
         )
@@ -29,7 +25,7 @@ def _keyword_search_jobs(url, company_name):
         return response.json().get("jobs", [])
 
     except Exception as e:
-        print(f"Error fetching jobs for {company_name}: {e}")
+        print(f"Error fetching jobs for {company_name} ({term!r}): {e}")
         return []
 
 
@@ -77,29 +73,32 @@ def get_jibe_internships(company_name, api_host):
         )
         return []
 
-    jobs = data.get("jobs", [])
+    # (job, from_facet) pairs. The tags3 "Intern" facet is exact, but not
+    # every Jibe site uses it (e.g. Johns Hopkins APL doesn't) and co-ops
+    # aren't always tagged Intern - so also run a keyword search per term
+    # in INTERN_SEARCH_TERMS, filtered on the title. seen_job_ids
+    # dedupes across all of them.
+    candidates = [(job, True) for job in data.get("jobs", [])]
 
-    # Not every Jibe site uses the tags3 "Intern" facet (e.g. Johns
-    # Hopkins APL doesn't) - when it matches nothing, fall back to a
-    # keyword search filtered on the title instead.
-    use_keyword_search = not jobs
-
-    if use_keyword_search:
-        jobs = _keyword_search_jobs(url, company_name)
+    for term in INTERN_SEARCH_TERMS:
+        candidates.extend(
+            (job, False)
+            for job in _keyword_search_jobs(url, company_name, term)
+        )
 
     internships = []
     seen_job_ids = set()
 
-    for job in jobs:
+    for job, from_facet in candidates:
 
         fields = job.get("data", {}) or {}
 
-        if use_keyword_search:
+        if from_facet:
 
-            if not _INTERN_WORD_RE.search(fields.get("title", "") or ""):
+            if "Intern" not in (fields.get("tags3") or []):
                 continue
 
-        elif "Intern" not in (fields.get("tags3") or []):
+        elif not is_internship_title(fields.get("title", "") or ""):
             continue
 
         title = fields.get("title", "") or ""

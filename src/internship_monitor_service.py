@@ -13,9 +13,21 @@ from company_monitors.adp_monitor import get_adp_internships
 from company_monitors.taleo_monitor import get_taleo_internships
 from company_monitors.generic_browser_monitor import get_browser_scraped_internships
 from database_setup import create_database
-from database_monitor import upsert_internship, create_alert_for_new_internship
+from database_monitor import (
+    upsert_internship,
+    create_alert_for_new_internship,
+    update_internship_location,
+)
 from database_alerts import get_unsent_alerts, mark_alerts_sent
-from sms_alerts import send_sms_alert
+from role_classifier import is_target_role, is_ineligible
+from location_filter import (
+    classify_location,
+    UNKNOWN,
+    NON_US,
+    UNKNOWN_LOCATION_LABEL,
+)
+import posting_location
+from sms_alerts import send_alert
 
 # Texts only go out 8am-10pm Eastern. Alerts found outside that window
 # stay queued in the DB and go out with the first run after 8am. Checked
@@ -144,12 +156,17 @@ def _build_platform_adapters(browser):
     }
 
 
-def run_monitor(skip_custom=False):
+def run_monitor(skip_custom=False, baseline=False):
     """
     skip_custom=True (--fast) skips every company that needs the slow
     headless browser (BROWSER_PLATFORMS) without importing
     Playwright. Handy for a quick local check; the scheduled workflow
     always does a full run.
+
+    baseline=True (--baseline) runs the full scan but, instead of
+    sending, marks every queued alert as sent. Use it once on a fresh
+    registry so the first real run only alerts on postings that are
+    genuinely new, not everything currently open.
     """
 
     create_database()
@@ -174,6 +191,11 @@ def run_monitor(skip_custom=False):
         "alerts_created": 0,
         "sms_sent": 0,
         "alerts_held": 0,
+        "alerts_skipped_non_us": 0,
+        "locations_resolved": 0,
+        "alerts_baselined": 0,
+        # Companies with an alert whose location stayed unknown.
+        "unknown_location_companies": set(),
     }
 
     needs_browser = any(
@@ -192,7 +214,10 @@ def run_monitor(skip_custom=False):
 
             try:
                 _run_all_companies(
-                    companies, _build_platform_adapters(browser), summary
+                    companies,
+                    _build_platform_adapters(browser),
+                    summary,
+                    browser=browser,
                 )
             finally:
                 browser.close()
@@ -203,11 +228,30 @@ def run_monitor(skip_custom=False):
             companies, _build_platform_adapters(None), summary
         )
 
-    _send_pending_alerts(summary)
+    if baseline:
+        _baseline_pending_alerts(summary)
+    else:
+        _send_pending_alerts(summary)
 
     print_summary(summary)
 
     return summary
+
+
+def _baseline_pending_alerts(summary):
+    """Mark every queued alert as sent without sending anything."""
+
+    pending = get_unsent_alerts()
+
+    if pending:
+        mark_alerts_sent([alert["id"] for alert in pending])
+
+    summary["alerts_baselined"] = len(pending)
+
+    print(
+        f"Baseline: marked {len(pending)} queued alert(s) as sent "
+        f"without sending."
+    )
 
 
 def _send_pending_alerts(summary, now=None):
@@ -230,7 +274,12 @@ def _send_pending_alerts(summary, now=None):
 
         return
 
-    if send_sms_alert(_build_batch_sms_body(pending)):
+    count = len(pending)
+    title = (
+        "1 new internship" if count == 1 else f"{count} new internships"
+    )
+
+    if send_alert(_build_batch_sms_body(pending), title=title):
 
         mark_alerts_sent([alert["id"] for alert in pending])
 
@@ -264,7 +313,7 @@ def _build_batch_sms_body(new_alerts):
         return (
             f"New internship: {internship['company']} - "
             f"{internship['title']} "
-            f"({internship.get('location', 'Unknown')})\n"
+            f"{_location_label(internship.get('location'))}\n"
             f"{internship.get('application_url', '')}"
         )
 
@@ -296,12 +345,58 @@ def _build_batch_sms_body(new_alerts):
         lines.append(f"{title} - {company}")
 
         for item in items:
-            lines.append(item.get("application_url", ""))
+
+            url = item.get("application_url", "")
+
+            if classify_location(item.get("location")) == UNKNOWN:
+                url = f"{url} {UNKNOWN_LOCATION_LABEL}"
+
+            lines.append(url)
 
     return "\n".join(lines)
 
 
-def _run_all_companies(companies, adapters, summary):
+def _location_label(location):
+
+    if classify_location(location) == UNKNOWN:
+        return UNKNOWN_LOCATION_LABEL
+
+    return f"({location})"
+
+
+def _resolve_location(company, internship, browser=None):
+    """
+    The listing gave no usable location - try the posting itself.
+    Returns the looked-up location string, or "" if none was found.
+    """
+
+    url = internship.get("application_url") or ""
+
+    if not url:
+        return ""
+
+    platform = company.get("platform", "")
+
+    try:
+
+        if platform == "workday":
+
+            tenant = company["platform_identifier"].split("|")[1]
+
+            return posting_location.workday_location(url, tenant)
+
+        if browser is not None and platform in BROWSER_PLATFORMS:
+
+            return posting_location.location_via_browser(url, browser)
+
+        return posting_location.location_via_requests(url)
+
+    except Exception as e:
+        print(f"Location lookup failed for {url}: {e}")
+        return ""
+
+
+def _run_all_companies(companies, adapters, summary, browser=None):
 
     for company in companies:
 
@@ -350,17 +445,50 @@ def _run_all_companies(companies, adapters, summary):
 
                 summary["new_internships_inserted"] += 1
 
+                location = internship.get("location", "")
+                role_type = internship.get("role_type", "Other")
+
+                would_alert = (
+                    is_target_role(role_type)
+                    and not is_ineligible(internship["title"])
+                )
+
+                # Only spend a lookup on postings that would otherwise
+                # alert and whose listing gave no usable location.
+                if would_alert and classify_location(location) == UNKNOWN:
+
+                    resolved = _resolve_location(company, internship, browser)
+
+                    if resolved and classify_location(resolved) != UNKNOWN:
+
+                        location = resolved
+
+                        update_internship_location(
+                            result["dedup_key"], location
+                        )
+
+                        summary["locations_resolved"] += 1
+
+                if would_alert and classify_location(location) == NON_US:
+
+                    summary["alerts_skipped_non_us"] += 1
+
+                    continue
+
                 alert = create_alert_for_new_internship(
                     internship["company"],
                     internship["title"],
-                    internship.get("location", ""),
-                    internship.get("role_type", "Other"),
+                    location,
+                    role_type,
                     application_url=internship.get("application_url", ""),
                 )
 
                 if alert:
 
                     summary["alerts_created"] += 1
+
+                    if classify_location(location) == UNKNOWN:
+                        summary["unknown_location_companies"].add(name)
 
             else:
 
@@ -383,8 +511,27 @@ def print_summary(summary):
         f"{summary['existing_internships_skipped']}"
     )
     print(f"Alerts created: {summary['alerts_created']}")
-    print(f"SMS sent: {summary['sms_sent']}")
+    print(f"Alerts skipped (non-US): {summary['alerts_skipped_non_us']}")
+    print(
+        f"Locations looked up from posting pages: "
+        f"{summary['locations_resolved']}"
+    )
+    print(f"Alerts sent (batches): {summary['sms_sent']}")
     print(f"Alerts held for later: {summary['alerts_held']}")
+
+    if summary.get("alerts_baselined"):
+        print(
+            f"Alerts marked sent by --baseline: "
+            f"{summary['alerts_baselined']}"
+        )
+
+    unknown = summary.get("unknown_location_companies") or set()
+
+    if unknown:
+        print(
+            "Alerts with unknown location from: "
+            + ", ".join(sorted(unknown))
+        )
 
 
 if __name__ == "__main__":
@@ -399,6 +546,15 @@ if __name__ == "__main__":
             "doesn't require Playwright/Chromium."
         ),
     )
+    parser.add_argument(
+        "--baseline",
+        action="store_true",
+        help=(
+            "Run the full scan but mark every queued alert as sent "
+            "without sending anything. Run once on a fresh setup so the "
+            "first real run doesn't alert on every currently open posting."
+        ),
+    )
     args = parser.parse_args()
 
-    run_monitor(skip_custom=args.fast)
+    run_monitor(skip_custom=args.fast, baseline=args.baseline)

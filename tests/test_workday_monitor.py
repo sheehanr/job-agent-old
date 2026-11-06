@@ -65,6 +65,7 @@ def test_parses_postings_and_builds_apply_url(monkeypatch):
     job = results[0]
     assert job["title"] == "FPGA Design Intern"
     assert job["role_type"] == "Hardware"
+    assert job["location"] == "Reston, VA"
     assert job["external_job_id"] == "R123"
     assert job["source_platform"] == "workday"
     assert job["application_url"] == (
@@ -91,7 +92,8 @@ def test_pages_until_a_page_has_no_internships(monkeypatch):
     )
 
     assert len(results) == 20
-    assert calls == [0, 20]
+    # Two pages per search term; the repeats across terms are deduped.
+    assert calls == [0, 20] * len(workday_monitor.INTERN_SEARCH_TERMS)
 
 
 def test_network_failure_returns_empty_list(monkeypatch):
@@ -104,3 +106,54 @@ def test_network_failure_returns_empty_list(monkeypatch):
     assert workday_monitor.get_workday_internships(
         "Leidos", "leidos.wd5.myworkdayjobs.com", "leidos", "External"
     ) == []
+
+
+def test_runs_each_search_term_and_dedupes(monkeypatch):
+    """
+    Co-op titles only come back for co-op searches (Workday doesn't stem
+    "intern" to "coop"). A posting matching several terms is kept once.
+    """
+
+    by_term = {
+        "intern": [_posting("Software Engineering Intern", "/job/x/A", "R1")],
+        "internship": [
+            _posting("Software Engineering Intern", "/job/x/A", "R1")
+        ],
+        "co-op": [_posting("Software Engineer Co-op", "/job/x/B", "R2")],
+        # J&J-style title with no hyphen.
+        "coop": [
+            _posting("Software Engineer Coop", "/job/x/C", "R3"),
+            _posting("Software Engineer Co-op", "/job/x/B", "R2"),
+        ],
+        "co op": [_posting("Data Science Co Op", "/job/x/D", "R4")],
+        "cooperative education": [
+            _posting(
+                "Cooperative Education - Firmware Engineering",
+                "/job/x/E", "R5"
+            ),
+            _posting("Cooperative Purchasing Manager", "/job/x/F", "R6"),
+        ],
+    }
+
+    searched = []
+
+    def fake_post(url, json, headers, timeout):
+        searched.append(json["searchText"])
+        return FakeResponse({"jobPostings": by_term[json["searchText"]]})
+
+    monkeypatch.setattr(workday_monitor.requests, "post", fake_post)
+
+    results = workday_monitor.get_workday_internships(
+        "Johnson & Johnson", "jj.wd5.myworkdayjobs.com", "jj", "JJ"
+    )
+
+    assert searched == list(workday_monitor.INTERN_SEARCH_TERMS)
+    assert [r["title"] for r in results] == [
+        "Software Engineering Intern",
+        "Software Engineer Co-op",
+        "Software Engineer Coop",
+        "Data Science Co Op",
+        "Cooperative Education - Firmware Engineering",
+    ]
+    coop = next(r for r in results if r["title"] == "Software Engineer Coop")
+    assert coop["role_type"] == "SWE"
