@@ -10,7 +10,7 @@ A scheduled program visits each company's career page and checks for new interns
 
 It runs on GitHub's servers, not my computer:
 
-Every 4 hours: full check of all 67
+Every hour: full check of every enabled company
 Alerts go out whenever a run finds something (24/7); quiet hours are left to the phone's Do Not Disturb
 
 Already-seen postings are tracked in a small database, so I only get texted about genuinely new ones. If multiple show up at once, they're bundled into a single text with company, title, location, and a link.

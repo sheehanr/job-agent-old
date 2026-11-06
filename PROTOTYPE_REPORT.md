@@ -2,7 +2,7 @@
 
 ## What it does
 
-The agent checks the career sites of 67 non-Big-Tech companies every 4 hours and texts me when a new **SWE, ML, Embedded, Firmware, Robotics or Hardware/FPGA** internship posts. It skips PhD/Master's-only and SkillBridge roles, and doesn't re-text a role reposted within 14 days. The defense, aerospace and industrial companies it covers (Lockheed Martin, Garmin, John Deere, Honeywell, Target and others) are ones most internship trackers miss. It runs on GitHub Actions, so no computer needs to stay on.
+The agent checks the career sites of 67 non-Big-Tech companies every hour and texts me when a new **SWE, ML, Embedded, Firmware, Robotics or Hardware/FPGA** internship posts. It skips PhD/Master's-only and SkillBridge roles, and doesn't re-text a role reposted within 14 days. The defense, aerospace and industrial companies it covers (Lockheed Martin, Garmin, John Deere, Honeywell, Target and others) are ones most internship trackers miss. It runs on GitHub Actions, so no computer needs to stay on.
 
 ## How to use it
 
@@ -14,7 +14,7 @@ The agent checks the career sites of 67 non-Big-Tech companies every 4 hours and
 
 ## How it works
 
-1. GitHub Actions starts a run every 4 hours.
+1. GitHub Actions starts a run every hour.
 2. For each company in the registry, the agent pulls postings from its job API (8 companies). For the other 57, it uses a headless browser.
 3. Each title is sorted into a role (SWE, ML, Embedded, etc.) by keyword.
 4. New postings are saved to a SQLite database, so the same job is never texted twice.
