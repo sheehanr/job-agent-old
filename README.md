@@ -227,8 +227,8 @@ is gitignored, so never commit real credentials.
 
 ## GitHub Actions setup
 
-The workflow is `.github/workflows/monitor.yml`. It runs hourly at :17 past
-the hour (cron `17 * * * *`). Each run executes the monitor, then
+The workflow is `.github/workflows/monitor.yml`. It runs hourly at :23 past
+the hour (cron `23 * * * *`). Each run executes the monitor, then
 Simplify, then commits `database/internship_agent.db` back to the repo
 only if it changed.
 

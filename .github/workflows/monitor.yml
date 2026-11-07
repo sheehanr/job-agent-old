@@ -2,10 +2,10 @@ name: Monitor (hourly, all companies)
 
 on:
   schedule:
-    # Every hour around the clock, at :17 past (GitHub drops far more
+    # Every hour around the clock, at :23 past (GitHub drops far more
     # runs scheduled exactly on the hour). Alerts are sent from every run,
     # 24/7 - quiet hours are left to the phone's Do Not Disturb.
-    - cron: "17 * * * *"
+    - cron: "23 * * * *"
   workflow_dispatch:
     inputs:
       baseline:
