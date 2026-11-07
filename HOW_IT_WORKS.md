@@ -1,16 +1,48 @@
-What this is
+# How it works
 
-Most internship trackers on GitHub just list openings at the usual FAANG+ companies. This one is different: it's a curated list of 67 companies chosen around my interests (embedded systems, ML, software/aerospace engineering). Some are the expected defense/aerospace names — Honeywell, Garmin, Lockheed Martin. Others are companies you'd never guess run tech internship programs at all — Target, Chipotle, Alo, Progressive.
+Medtech Job Monitor is a fork of
+[BadisMami/hidden-gem-agent](https://github.com/BadisMami/hidden-gem-agent),
+customized to watch healthcare and medtech companies for internship and
+co-op postings. It sends a phone push when something new and relevant
+appears.
 
-A bot checks all 67 automatically and texts me when something new and relevant posts - only SWE, ML, embedded/firmware, robotics, and hardware/FPGA roles, and never PhD/Master's-only or SkillBridge ones.
+## What it watches
 
-How it works
+- **Company career sites.** 29 healthcare, medtech, and digital health
+  companies, including Medtronic, Stryker, Abbott, Johnson & Johnson,
+  Intuitive Surgical, Epic, Regeneron, Philips, GE HealthCare, Insulet,
+  Dexcom, Oura, and Tempus AI.
+  - Most are checked through their hiring system's own data feed (Workday,
+    SuccessFactors, Lever, iCIMS, Greenhouse, Jibe), so those checks are
+    precise.
+  - Three (Intuitive Surgical, Zimmer Biomet, Epic) are checked with an
+    automated browser instead.
+- **Simplify's public internship list.** It's filtered to a watchlist of
+  23 big tech companies (Google, Microsoft, NVIDIA, Stripe, and others)
+  plus the same healthcare/medtech companies.
 
-A scheduled program visits each company's career page and checks for new internship postings that match my interests. Some companies (7 so far, including Hudl, Garmin, Honeywell, Lockheed Martin) have a structured API-style feed, so those checks are precise. The rest get checked with an automated browser that scans listings for the word "intern" — works most of the time, still expanding coverage company by company.
+## What triggers an alert
+
+A posting has to be all of these:
+
+- an internship or co-op (including spellings like "Coop" and "Co Op"),
+- in the United States,
+- a SWE, ML, Data, Embedded, Firmware, or Robotics role,
+- not PhD/Master's-only, SkillBridge, or high school, and
+- new: not already alerted, and not a repost of the same role at the same
+  company within 14 days, from either source.
+
+## When it runs
 
 It runs on GitHub's servers, not my computer:
 
-Every hour: full check of every enabled company
-Alerts go out whenever a run finds something (24/7); quiet hours are left to the phone's Do Not Disturb
+- **Every hour:** a full check of every enabled company, then Simplify's
+  list.
+- **Alerts go out whenever a run finds something, 24/7.** Quiet hours are
+  left to the phone's Do Not Disturb.
 
-Already-seen postings are tracked in a small database, so I only get texted about genuinely new ones. If multiple show up at once, they're bundled into a single text with company, title, location, and a link.
+Already-seen postings are tracked in a small SQLite database that the
+workflow commits back to the repo. If several new postings show up in one
+run, they're bundled into a single push per source ("Career sites:" or
+"Simplify:"). Each push lists the company, title, and an apply link. The
+pushes go through ntfy, with email-to-SMS as a fallback.
