@@ -37,7 +37,7 @@ def load_table(table_name):
 
 
 st.set_page_config(
-    page_title="Hidden Gem Internship Tracker",
+    page_title="Internship Radar",
     layout="wide"
 )
 
@@ -54,7 +54,7 @@ if st.sidebar.button("🔄 Refresh Data"):
 # =====================================
 
 st.title(
-    "🚀 Hidden Gem Internship Tracker"
+    "📡 Internship Radar"
 )
 
 # =====================================

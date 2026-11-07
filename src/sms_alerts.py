@@ -154,8 +154,8 @@ if __name__ == "__main__":
     import sys
 
     delivered = send_alert(
-        "Hidden Gem Agent test - if you can read this, phone alerts work.\n"
-        "https://github.com/sheehanr/hidden-gem-agent",
+        "Internship Radar test - if you can read this, phone alerts work.\n"
+        "https://github.com/sheehanr/internship-radar",
         title="Test alert",
     )
 

@@ -1,10 +1,11 @@
-# Medtech Job Monitor
+# Internship Radar
 
 > This is a fork of [BadisMami/hidden-gem-agent](https://github.com/BadisMami/hidden-gem-agent),
-> customized by me to monitor **healthcare and medtech internship and co-op
-> postings**. The original project, including its architecture, the
-> career-site adapters, the SQLite pipeline, and the dashboard, was built
-> by [BadisMami](https://github.com/BadisMami). All credit for that
+> customized by me to watch for **internship and co-op postings at
+> healthcare/medtech companies and big tech**. The original project,
+> including its architecture, the career-site adapters, the SQLite
+> pipeline, and the dashboard, was built by
+> [BadisMami](https://github.com/BadisMami). All credit for that
 > foundation goes to them.
 
 ### What I changed in this fork
@@ -207,7 +208,7 @@ next run.
 1. Install the ntfy app (iOS/Android) and subscribe to the same topic name.
 2. Use a long random topic name, because anyone who knows it can read your
    alerts:
-   `python -c "import secrets; print('hga-' + secrets.token_hex(16))"`
+   `python -c "import secrets; print('internship-radar-' + secrets.token_hex(16))"`
 3. Optional: `NTFY_SERVER` (for self-hosted ntfy) and `NTFY_TOKEN` (for a
    protected topic).
 4. Send a test with `python src/sms_alerts.py`.

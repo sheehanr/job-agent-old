@@ -1,10 +1,10 @@
 # How it works
 
-Medtech Job Monitor is a fork of
+Internship Radar is a fork of
 [BadisMami/hidden-gem-agent](https://github.com/BadisMami/hidden-gem-agent),
-customized to watch healthcare and medtech companies for internship and
-co-op postings. It sends a phone push when something new and relevant
-appears.
+customized to watch healthcare/medtech companies and big tech for
+internship and co-op postings. It sends a phone push when something new
+and relevant appears.
 
 ## What it watches
 
