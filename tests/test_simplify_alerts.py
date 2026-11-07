@@ -161,6 +161,31 @@ def test_seeded_watchlist_file_is_valid():
     assert watchlist["boston scientific"] == "Boston Scientific"
 
 
+def test_watchlist_is_only_big_tech_and_health_companies():
+    """Big tech + the enabled (healthcare/medtech) registry companies -
+    never the old disabled defense/retail/finance rows."""
+
+    import csv
+
+    canonical = {name for name, _ in sa.watchlist_entries()}
+
+    with open("data/company_registry.csv", newline="") as f:
+        rows = list(csv.DictReader(f))
+
+    enabled = {r["company"] for r in rows if r["enabled"] == "yes"}
+    disabled = {r["company"] for r in rows if r["enabled"] != "yes"}
+
+    assert enabled <= canonical
+    assert not (disabled & canonical)
+    assert len(canonical) == 23 + len(enabled)
+
+    watchlist = sa.load_watchlist()
+
+    for old in ["booz allen", "boeing", "the boeing company", "caci",
+                "rtx", "lockheed martin", "target", "capital one"]:
+        assert old not in watchlist
+
+
 # --------------------------------------------------------------- filter
 
 
