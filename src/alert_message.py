@@ -32,28 +32,15 @@ def _location_label(location, max_places=3):
 
 def build_alert_body(new_alerts, source_label=None):
     """
-    Consolidates all of a run's alerts into ONE message instead of one
-    per internship - carriers' email-to-SMS gateways rate-limit bursts,
-    and one push per run is easier to read anyway. Same company + title
-    postings are grouped under one header with all their links.
-    source_label (e.g. "Simplify") prefixes the message so you can tell
-    the two sources apart.
+    Body of the one-per-run notification. The title (see alert_title)
+    already carries the source and the count, so the body is just the
+    postings: a "Title - Company" header per role, then its apply link(s).
+    Same company + title postings share one header. Every posting's apply
+    link is always included.
+
+    source_label is accepted for symmetry with alert_title but isn't
+    repeated in the body.
     """
-
-    prefix = f"{source_label}: " if source_label else ""
-
-    count = len(new_alerts)
-
-    if count == 1:
-
-        internship = new_alerts[0]
-
-        return (
-            f"{prefix}New internship: {internship['company']} - "
-            f"{internship['title']} "
-            f"{_location_label(internship.get('location'))}\n"
-            f"{internship.get('application_url', '')}"
-        )
 
     groups = {}
     group_order = []
@@ -68,22 +55,29 @@ def build_alert_body(new_alerts, source_label=None):
 
         groups[key].append(internship)
 
-    lines = [f"{prefix}{count} new internships found:"]
+    blocks = []
 
     for key in group_order:
 
         company, title = key
+        items = groups[key]
 
-        lines.append("")
-        lines.append(f"{title} - {company}")
+        header = f"{title} - {company}"
 
-        for item in groups[key]:
+        if len(items) == 1:
+            header = f"{header} {_location_label(items[0].get('location'))}"
+
+        lines = [header]
+
+        for item in items:
 
             url = item.get("application_url", "")
 
-            if classify_location(item.get("location")) == UNKNOWN:
+            if len(items) > 1 and classify_location(item.get("location")) == UNKNOWN:
                 url = f"{url} {UNKNOWN_LOCATION_LABEL}"
 
             lines.append(url)
 
-    return "\n".join(lines)
+        blocks.append("\n".join(lines))
+
+    return "\n\n".join(blocks)

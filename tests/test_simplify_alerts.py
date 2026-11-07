@@ -322,7 +322,10 @@ def test_new_match_alerts_once_labelled_simplify(test_db, watchlist_path,
     assert len(sends) == 1
     title, body = sends[0]
     assert title == "Simplify: 2 new internships"
-    assert body.startswith("Simplify: 2 new internships found:")
+    # Source and count are in the title only, not repeated in the body.
+    assert "Simplify" not in body
+    assert "new internships" not in body
+    assert "https://epic/1" in body
     assert "Software Developer Intern - Epic Systems" in body
     assert "Gameplay" not in body
 

@@ -2,11 +2,7 @@
 
 > This is a fork of [BadisMami/hidden-gem-agent](https://github.com/BadisMami/hidden-gem-agent),
 > customized by me to watch for **internship and co-op postings at
-> healthcare/medtech companies and big tech**. The original project,
-> including its architecture, the career-site adapters, the SQLite
-> pipeline, and the dashboard, was built by
-> [BadisMami](https://github.com/BadisMami). All credit for that
-> foundation goes to them.
+> healthcare/medtech companies and big tech**.
 
 ### What I changed in this fork
 
@@ -52,7 +48,7 @@ Alerts are deliberately narrow. A posting only alerts if it is:
 - not PhD/Master's-only, and
 - not already alerted.
 
-Each source sends at most one push per run, listing every new posting with
+Each source sends one notification per run, listing every new posting with
 its apply link. This is a discovery and alerting tool, not an application
 tracker: it doesn't track saved jobs, applications, or interviews.
 
@@ -197,9 +193,12 @@ python src/simplify_alerts.py --report-unmatched
 
 ## Alerts
 
-Each run sends **one** notification per source with every new posting and
-its apply link. They're labelled "Career sites:" or "Simplify:". Alerts go
-out at any hour, because there is no texting window; use your phone's Do
+Each run sends **one** notification per source. The title carries the
+source and count (e.g. "Simplify: 3 new internships"), and the body lists
+each posting as "Title - Company (location)" followed by its apply link.
+Every apply link is always in the notification: if a batch is too long for
+one ntfy push (about 4 KB), it's split across several pushes, numbered
+"(1/2)", "(2/2)", and never trimmed. Alerts go out at any hour, because there is no texting window; use your phone's Do
 Not Disturb for quiet hours. A failed send leaves the alerts queued for the
 next run.
 

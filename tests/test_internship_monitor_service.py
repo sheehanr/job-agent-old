@@ -37,7 +37,9 @@ def test_multiple_alerts_produce_one_consolidated_message():
     body = svc._build_batch_sms_body(alerts)
 
     # One message, not one per internship - all companies appear in it.
-    assert "3 new internships" in body
+    # The count lives in the notification title, not repeated in the body.
+    assert "new internships" not in body
+    assert "Career sites" not in body
     assert "Acme" in body
     assert "Globex" in body
     assert "Initech" in body
@@ -80,7 +82,7 @@ def test_same_role_same_company_grouped_with_all_links():
 
     body = svc._build_batch_sms_body(alerts)
 
-    assert "6 new internships found" in body
+    assert "new internships found" not in body
     # One header for the 5 identically-titled Lockheed Martin postings.
     assert body.count("Embedded Software Engineer Intern - Lockheed Martin") == 1
     assert body.count("Software Engineering Intern - Boeing") == 1
@@ -109,7 +111,7 @@ def test_large_batch_is_one_message_listing_everything():
 
     body = svc._build_batch_sms_body(alerts)
 
-    assert "40 new internships" in body
+    assert "new internships" not in body
 
     # Each of the 40 distinct roles gets its own header line.
     header_lines = [
@@ -192,9 +194,18 @@ def test_unknown_location_is_labelled_in_alert_body():
                          "https://insulet.com/j/2"),
     ])
 
-    assert "https://epic.com/j/1 (location unknown)" in batch
-    assert "https://insulet.com/j/2\n" in batch + "\n"
-    assert "https://insulet.com/j/2 (location unknown)" not in batch
+    assert "Software Developer Intern - Epic (location unknown)" in batch
+    assert "DevOps Intern - Insulet (Acton, Massachusetts)" in batch
+    assert batch.count("(location unknown)") == 1
+
+    # Several postings under one title: the label goes on the link.
+    grouped = svc._build_batch_sms_body([
+        _make_internship("Epic", "SWE Intern", "Unknown", "https://epic.com/j/1"),
+        _make_internship("Epic", "SWE Intern", "Verona, WI", "https://epic.com/j/2"),
+    ])
+
+    assert "https://epic.com/j/1 (location unknown)" in grouped
+    assert "https://epic.com/j/2 (location unknown)" not in grouped
 
 
 def test_baseline_marks_queued_alerts_sent_without_sending(monkeypatch):
@@ -345,3 +356,36 @@ def test_no_lookup_for_non_target_roles(monkeypatch):
     )
 
     assert lookups == []
+
+
+def test_body_has_no_repeated_header_and_every_apply_link():
+
+    from alert_message import alert_title
+
+    alerts = [
+        _make_internship("Insulet", "DevOps Intern", "Acton, Massachusetts",
+                         "https://insulet.com/j/1"),
+        _make_internship("Stryker", "SWE Intern", "Portage, Michigan",
+                         "https://stryker.com/j/2"),
+    ]
+
+    body = svc._build_batch_sms_body(alerts)
+
+    assert body == (
+        "DevOps Intern - Insulet (Acton, Massachusetts)\n"
+        "https://insulet.com/j/1\n"
+        "\n"
+        "SWE Intern - Stryker (Portage, Michigan)\n"
+        "https://stryker.com/j/2"
+    )
+    assert alert_title(2, svc.SOURCE_LABEL) == "Career sites: 2 new internships"
+
+
+def test_single_alert_body_is_just_the_posting():
+
+    body = svc._build_batch_sms_body([
+        _make_internship("Stryker", "SWE Intern", "Portage, Michigan",
+                         "https://stryker.com/j/2")
+    ])
+
+    assert body == "SWE Intern - Stryker (Portage, Michigan)\nhttps://stryker.com/j/2"

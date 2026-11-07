@@ -199,26 +199,72 @@ def test_falls_back_to_sms_without_ntfy_topic(monkeypatch):
         lambda body: sms_calls.append(body) or True
     )
 
-    assert sms_alerts.send_alert("hello", title="x") is True
-    assert sms_calls == ["hello"]
+    assert sms_alerts.send_alert("hello", title="Simplify: 1 new internship") is True
+    # Texts have no title line, so the title goes on top of the body.
+    assert sms_calls == ["Simplify: 1 new internship\n\nhello"]
 
 
-def test_long_ntfy_body_is_trimmed_to_fit(monkeypatch):
+def test_long_ntfy_body_is_split_never_trimmed(monkeypatch):
+    """Every apply link must arrive in ntfy - a big batch becomes several
+    pushes rather than being cut off."""
 
     _clear_env(monkeypatch)
     monkeypatch.setenv("NTFY_TOPIC", "alerts")
 
     posts = _capture_ntfy(monkeypatch)
 
-    body = "\n".join(
+    blocks = [
+        f"Software Engineering Intern {i} - Company{i} (Boston, MA)\n"
         f"https://example.com/job/{i:05d}/some-long-posting-slug"
-        for i in range(500)
-    )
+        for i in range(120)
+    ]
+    body = "\n\n".join(blocks)
 
-    assert sms_alerts.send_alert(body) is True
+    assert sms_alerts.send_alert(body, title="Career sites: 120 new internships")
 
-    sent = posts[0]["data"]
+    assert len(posts) > 1
 
-    assert len(sent) <= sms_alerts.NTFY_MAX_BYTES
-    assert sent.decode().startswith("https://example.com/job/00000/")
-    assert sent.decode().endswith("see the dashboard.")
+    sent = [p["data"].decode("utf-8") for p in posts]
+
+    for part in sent:
+        assert len(part.encode("utf-8")) <= sms_alerts.NTFY_MAX_BYTES
+        assert "dashboard" not in part
+
+    # Nothing lost, nothing split mid-posting.
+    assert "\n\n".join(sent) == body
+
+    titles = [p["headers"]["Title"] for p in posts]
+    assert titles[0] == f"Career sites: 120 new internships (1/{len(posts)})"
+    assert titles[-1].endswith(f"({len(posts)}/{len(posts)})")
+
+
+def test_failed_part_returns_false(monkeypatch):
+
+    _clear_env(monkeypatch)
+    monkeypatch.setenv("NTFY_TOPIC", "alerts")
+
+    calls = []
+
+    def flaky_post(url, data, headers, timeout):
+        calls.append(headers["Title"])
+        return FakeNtfyResponse(fail=len(calls) == 2)
+
+    monkeypatch.setattr(sms_alerts.requests, "post", flaky_post)
+
+    body = "\n\n".join(f"Intern {i}\nhttps://x.com/{i:04d}" + "x" * 80
+                       for i in range(200))
+
+    assert sms_alerts.send_alert(body, title="t") is False
+    assert len(calls) == 2
+
+
+def test_short_body_is_one_push_without_part_numbers(monkeypatch):
+
+    _clear_env(monkeypatch)
+    monkeypatch.setenv("NTFY_TOPIC", "alerts")
+
+    posts = _capture_ntfy(monkeypatch)
+
+    assert sms_alerts.send_alert("SWE Intern - Acme\nhttps://a/1", title="T")
+    assert len(posts) == 1
+    assert posts[0]["headers"]["Title"] == "T"

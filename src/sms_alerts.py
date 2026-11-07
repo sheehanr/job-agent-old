@@ -10,7 +10,8 @@ load_dotenv()
 NTFY_DEFAULT_SERVER = "https://ntfy.sh"
 
 # ntfy.sh turns messages over 4096 bytes into a file attachment instead of
-# showing them in the notification, so long batches are trimmed to fit.
+# showing them in the notification, so a long batch is split across
+# several pushes - never trimmed, so every apply link always arrives.
 NTFY_MAX_BYTES = 4000
 
 
@@ -26,31 +27,52 @@ def send_alert(body, title="New internships"):
     if os.environ.get("NTFY_TOPIC", "").strip():
         return send_ntfy_alert(body, title=title)
 
-    return send_sms_alert(body)
+    # A text has no separate title line, so put it at the top.
+    return send_sms_alert(f"{title}\n\n{body}" if title else body)
 
 
-def _fit_ntfy_body(body, limit=NTFY_MAX_BYTES):
+def _utf8_len(text):
 
-    if len(body.encode("utf-8")) <= limit:
-        return body
+    return len(text.encode("utf-8"))
 
-    footer = "\n\n...more new postings - see the dashboard."
-    budget = limit - len(footer.encode("utf-8"))
 
-    kept = []
-    used = 0
+def split_ntfy_body(body, limit=NTFY_MAX_BYTES):
+    """
+    Split a message into chunks that each fit in one ntfy push. Splits
+    between postings (blank-line-separated blocks), falling back to
+    between lines for a single oversized block, so a posting's title and
+    apply link are never cut apart mid-line. Nothing is dropped.
+    """
 
-    for line in body.split("\n"):
+    if _utf8_len(body) <= limit:
+        return [body]
 
-        size = len(line.encode("utf-8")) + 1
+    pieces = []
 
-        if used + size > budget:
-            break
+    for block in body.split("\n\n"):
 
-        kept.append(line)
-        used += size
+        if _utf8_len(block) <= limit:
+            pieces.append(block)
+        else:
+            pieces.extend(block.split("\n"))
 
-    return "\n".join(kept) + footer
+    chunks = []
+    current = ""
+
+    for piece in pieces:
+
+        candidate = f"{current}\n\n{piece}" if current else piece
+
+        if current and _utf8_len(candidate) > limit:
+            chunks.append(current)
+            current = piece
+        else:
+            current = candidate
+
+    if current:
+        chunks.append(current)
+
+    return chunks
 
 
 def send_ntfy_alert(body, title="New internships"):
@@ -83,23 +105,35 @@ def send_ntfy_alert(body, title="New internships"):
     if token:
         headers["Authorization"] = f"Bearer {token}"
 
-    try:
+    chunks = split_ntfy_body(body)
 
-        response = requests.post(
-            f"{server}/{topic}",
-            data=_fit_ntfy_body(body).encode("utf-8"),
-            headers=headers,
-            timeout=15,
-        )
-        response.raise_for_status()
+    for number, chunk in enumerate(chunks, 1):
 
-    except Exception as e:
-        print(f"Failed to send ntfy alert: {e}")
-        return False
+        part_headers = dict(headers)
+
+        if len(chunks) > 1:
+            part_headers["Title"] = f"{headers['Title']} ({number}/{len(chunks)})"
+
+        try:
+
+            response = requests.post(
+                f"{server}/{topic}",
+                data=chunk.encode("utf-8"),
+                headers=part_headers,
+                timeout=15,
+            )
+            response.raise_for_status()
+
+        except Exception as e:
+            # The whole batch stays queued and is resent next run, so a
+            # partial failure can repeat earlier parts - but never loses
+            # a link.
+            print(f"Failed to send ntfy alert (part {number}): {e}")
+            return False
 
     # Don't print the topic - in a public repo's Actions log it would let
     # anyone subscribe to my alerts.
-    print("ntfy push alert sent.")
+    print(f"ntfy push alert sent ({len(chunks)} part(s)).")
 
     return True
 
