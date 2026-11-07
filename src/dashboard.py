@@ -45,7 +45,7 @@ st.set_page_config(
 # SIDEBAR
 # =====================================
 
-if st.sidebar.button("🔄 Refresh Data"):
+if st.sidebar.button("Refresh Data"):
     st.cache_data.clear()
     st.rerun()
 
@@ -54,7 +54,7 @@ if st.sidebar.button("🔄 Refresh Data"):
 # =====================================
 
 st.title(
-    "📡 Internship Radar"
+    "Internship Radar"
 )
 
 # =====================================
@@ -115,7 +115,7 @@ with tab1:
     )
 
     search_term = st.text_input(
-        "🔍 Search company, title, location, or role type"
+        "Search company, title, location, or role type"
     )
 
     only_my_roles = st.checkbox(

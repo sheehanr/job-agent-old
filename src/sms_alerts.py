@@ -75,7 +75,6 @@ def send_ntfy_alert(body, title="New internships"):
     headers = {
         # HTTP headers must be latin-1; titles are plain ASCII anyway.
         "Title": title.encode("ascii", "ignore").decode(),
-        "Tags": "briefcase",
         "Priority": "default",
     }
 
