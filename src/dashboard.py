@@ -37,7 +37,7 @@ def load_table(table_name):
 
 
 st.set_page_config(
-    page_title="Internship Radar",
+    page_title="Job Agent",
     layout="wide"
 )
 
@@ -54,7 +54,7 @@ if st.sidebar.button("Refresh Data"):
 # =====================================
 
 st.title(
-    "Internship Radar"
+    "Job Agent"
 )
 
 # =====================================

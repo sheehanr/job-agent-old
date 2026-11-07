@@ -1,4 +1,4 @@
-# Internship Radar
+# Job Agent
 
 > This is a fork of [BadisMami/hidden-gem-agent](https://github.com/BadisMami/hidden-gem-agent),
 > customized by me to watch for **internship and co-op postings at
@@ -208,7 +208,7 @@ next run.
 1. Install the ntfy app (iOS/Android) and subscribe to the same topic name.
 2. Use a long random topic name, because anyone who knows it can read your
    alerts:
-   `python -c "import secrets; print('internship-radar-' + secrets.token_hex(16))"`
+   `python -c "import secrets; print('job-agent-' + secrets.token_hex(16))"`
 3. Optional: `NTFY_SERVER` (for self-hosted ntfy) and `NTFY_TOKEN` (for a
    protected topic).
 4. Send a test with `python src/sms_alerts.py`.

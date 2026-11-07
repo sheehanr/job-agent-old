@@ -1,6 +1,6 @@
 # How it works
 
-Internship Radar is a fork of
+Job Agent is a fork of
 [BadisMami/hidden-gem-agent](https://github.com/BadisMami/hidden-gem-agent),
 customized to watch healthcare/medtech companies and big tech for
 internship and co-op postings. It sends a phone push when something new

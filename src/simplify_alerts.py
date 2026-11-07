@@ -248,7 +248,7 @@ def match_listing(listing, watchlist, today=None):
 def fetch_listings(url=LISTINGS_URL):
 
     response = requests.get(
-        url, headers={"User-Agent": "internship-radar"}, timeout=60
+        url, headers={"User-Agent": "job-agent"}, timeout=60
     )
     response.raise_for_status()
 
