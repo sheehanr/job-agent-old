@@ -63,7 +63,19 @@ def create_database(db_path=DB_PATH):
         title TEXT,
         location TEXT,
         application_url TEXT,
-        sms_sent INTEGER NOT NULL DEFAULT 0
+        sms_sent INTEGER NOT NULL DEFAULT 0,
+        source TEXT NOT NULL DEFAULT 'monitor'
+    )
+    """)
+
+    # Simplify listing ids already processed (see simplify_alerts.py), so
+    # each listing alerts at most once.
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS simplify_seen (
+        listing_id TEXT PRIMARY KEY,
+        company TEXT,
+        title TEXT,
+        first_seen TEXT
     )
     """)
 
@@ -172,6 +184,15 @@ def _migrate_alerts_table(conn, cursor):
     if "sms_sent" not in existing_columns:
         cursor.execute(
             "ALTER TABLE alerts ADD COLUMN sms_sent INTEGER NOT NULL DEFAULT 1"
+        )
+
+    # Which alert source queued the row ("monitor" or "simplify"), so each
+    # one only sends its own queue. Existing rows all came from the
+    # monitor.
+    if "source" not in existing_columns:
+        cursor.execute(
+            "ALTER TABLE alerts ADD COLUMN source TEXT NOT NULL "
+            "DEFAULT 'monitor'"
         )
 
     conn.commit()

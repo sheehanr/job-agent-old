@@ -10,8 +10,8 @@ on:
     inputs:
       baseline:
         description: >-
-          Baseline run: scan everything and mark all queued alerts as
-          sent WITHOUT notifying (use once on first setup).
+          Baseline run: scan everything (career sites and Simplify) and
+          mark all current matches as sent WITHOUT notifying.
         type: boolean
         default: false
       test_alert:
@@ -32,6 +32,15 @@ jobs:
   run:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      # ntfy push is used when NTFY_TOPIC is set; otherwise the
+      # email-to-SMS settings below are used.
+      NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+      EMAIL_SENDER_ADDRESS: ${{ secrets.EMAIL_SENDER_ADDRESS }}
+      EMAIL_APP_PASSWORD: ${{ secrets.EMAIL_APP_PASSWORD }}
+      NOTIFICATION_PHONE_NUMBER: ${{ secrets.NOTIFICATION_PHONE_NUMBER }}
+      SMS_CARRIER_GATEWAY: ${{ secrets.SMS_CARRIER_GATEWAY }}
+      BASELINE: ${{ inputs.baseline && '--baseline' || '' }}
     steps:
       - name: Check out repo
         uses: actions/checkout@v4
@@ -49,27 +58,19 @@ jobs:
 
       - name: Send test notification
         if: ${{ inputs.test_alert }}
-        env:
-          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
-          EMAIL_SENDER_ADDRESS: ${{ secrets.EMAIL_SENDER_ADDRESS }}
-          EMAIL_APP_PASSWORD: ${{ secrets.EMAIL_APP_PASSWORD }}
-          NOTIFICATION_PHONE_NUMBER: ${{ secrets.NOTIFICATION_PHONE_NUMBER }}
-          SMS_CARRIER_GATEWAY: ${{ secrets.SMS_CARRIER_GATEWAY }}
         run: python src/sms_alerts.py
 
       - name: Run full monitor (all companies, including custom scraper)
-        env:
-          # ntfy push is used when NTFY_TOPIC is set; otherwise the
-          # email-to-SMS settings below are used.
-          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
-          EMAIL_SENDER_ADDRESS: ${{ secrets.EMAIL_SENDER_ADDRESS }}
-          EMAIL_APP_PASSWORD: ${{ secrets.EMAIL_APP_PASSWORD }}
-          NOTIFICATION_PHONE_NUMBER: ${{ secrets.NOTIFICATION_PHONE_NUMBER }}
-          SMS_CARRIER_GATEWAY: ${{ secrets.SMS_CARRIER_GATEWAY }}
-          BASELINE: ${{ inputs.baseline && '--baseline' || '' }}
         run: python src/internship_monitor_service.py $BASELINE
 
+      # Runs even if the monitor step failed, so one source breaking
+      # doesn't silence the other. Uses the same notification path.
+      - name: Check Simplify listings (watchlist companies)
+        if: ${{ !cancelled() }}
+        run: python src/simplify_alerts.py $BASELINE
+
       - name: Commit and push database changes (only if something changed)
+        if: ${{ !cancelled() }}
         run: |
           git config user.name "hidden-gem-agent-bot"
           git config user.email "actions@users.noreply.github.com"

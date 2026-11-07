@@ -1,0 +1,131 @@
+# Simplify watchlist - only listings from these companies can alert.
+#
+# One company per line:  Canonical Name | alias | alias ...
+# The canonical name is what alerts show and what dedupe against the
+# career-site monitor uses, so for registry companies it matches
+# data/company_registry.csv. Aliases cover Simplify's spellings.
+# Matching is case-insensitive on the WHOLE name - "Epic" matches
+# "Epic" but never "Epic Games"; "Intuit" never matches
+# "Intuitive Surgical".
+
+# Big tech / well-known software companies
+Google
+Microsoft
+Apple
+Amazon
+Meta
+NVIDIA
+Stripe
+Databricks
+Salesforce
+Adobe
+Oracle
+Anthropic
+OpenAI
+Datadog
+Cloudflare
+Intuit
+Figma
+Notion
+ServiceNow
+LinkedIn
+Pinterest
+MongoDB
+Snowflake
+
+# Every company in data/company_registry.csv
+Target
+Chipotle
+Progressive
+Hudl
+Strava
+Nike
+State Farm
+Garmin
+John Deere
+Cummins
+Caterpillar | Caterpillar Inc.
+Delta Airlines | Delta Air Lines
+UPS | United Parcel Service (UPS)
+Fidelity | Fidelity Investments
+RTX
+Lockheed Martin
+L3Harris | L3Harris Technologies
+Honeywell
+3M
+Raymond James | Raymond James Financial
+Capital One
+Publix
+Best Buy
+McKesson
+Cigna | Cigna Group
+Liberty Mutual
+USAA
+MassMutual
+Northwestern Mutual
+Truist | Truist Bank
+Charles Schwab
+Edward Jones
+Southwest Airlines
+FedEx | FedEx Freight
+Home Depot | The Home Depot
+Lowe's
+Dick's Sporting Goods
+Kroger
+Illinois Tool Works
+GE Aerospace
+Boeing | The Boeing Company
+Duke Energy
+UnitedHealth Group
+Parker Hannifin
+Eaton | Eaton Corporation
+Mercury Insurance
+PepsiCo
+Procter & Gamble | Procter & Gamble (P&G)
+Northrop Grumman
+General Dynamics | General Dynamics Mission Systems
+General Dynamics IT | General Dynamics Information Technology
+BAE Systems Inc | BAE Systems
+Huntington Ingalls Industries
+HII Mission Technologies
+Leidos
+Booz Allen Hamilton | Booz Allen
+SAIC
+CACI International | CACI
+Textron Systems | Textron
+Leonardo DRS
+Kratos Defense
+Mercury Systems
+ManTech
+Parsons Corporation | Parsons
+Peraton
+MITRE Corporation
+Johns Hopkins Applied Physics Laboratory
+Regeneron | Regeneron Pharmaceuticals
+ModMed | Modernizing Medicine
+Abbott
+Stryker
+Philips
+GE HealthCare | GE Healthcare
+Bristol Myers Squibb
+Insulet | Insulet Corporation
+Danaher | Danaher Corporation
+Medtronic
+Pfizer
+Edwards Lifesciences
+Dexcom
+Boston Scientific
+Merck
+Johnson & Johnson | J&J
+Amgen
+Veeva Systems | Veeva
+Cook Medical | Cook Group
+Oura
+Zimmer Biomet | Zimmer Biomet Holdings
+Becton Dickinson
+Intuitive Surgical
+Tempus AI | Tempus
+Eli Lilly
+Arthrex
+Epic Systems | Epic
+Siemens Healthineers

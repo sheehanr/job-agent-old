@@ -118,6 +118,37 @@ To run the Greenhouse adapter directly against one company:
 python src/company_monitors/greenhouse_monitor.py
 ```
 
+## Second source: Simplify listings
+
+`src/simplify_alerts.py` runs after the monitor in the same workflow. It
+downloads Simplify's public `listings.json` (SimplifyJobs/Summer2027-
+Internships) and alerts on a listing only if **all** of these hold:
+
+- `active` and `is_visible` are true, and at least one location is in the US
+  (`location_filter.py`; Simplify's "NYC"/"SF" shorthands count).
+- A term hasn't started yet (Winter/Spring start Jan 1, Summer May 15,
+  Fall Aug 20), ignoring terms more than 2 years out; `["N/A"]` is kept.
+  Computed from today's date - no hardcoded years.
+- Category is Software, Software Engineering, AI/ML/Data, or Data Science,
+  AI & Machine Learning - or Hardware when `classify_role()` says Embedded,
+  Firmware, or Robotics.
+- Not grad-only/ineligible (`is_ineligible()`).
+- The company is on `data/simplify_watchlist.txt` - exact, case-insensitive
+  whole-name match, one company per line as `Canonical | alias | alias`
+  (so "Epic" matches Epic Systems but "Epic Games" doesn't).
+
+Seen listing ids live in the `simplify_seen` table, so each listing alerts
+once. Matches are skipped if either source already alerted on the same
+company + title in the last 14 days. Alerts go through the same ntfy/SMS
+path, labelled "Simplify:" (the monitor's are labelled "Career sites:").
+The first run, with nothing seen yet, is automatically a baseline;
+`--baseline` does the same on demand. To find watchlist spellings that
+match nothing in Simplify's file:
+
+```powershell
+python src/simplify_alerts.py --report-unmatched
+```
+
 ## Dashboard
 
 ```powershell

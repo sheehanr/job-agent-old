@@ -9,11 +9,14 @@ def save_alert(
     title,
     location,
     application_url="",
-    db_path=DB_PATH
+    db_path=DB_PATH,
+    source="monitor",
+    sent=False,
 ):
     """
-    Save an alert as not-yet-texted. It's sent (and marked sent) by the
-    next monitor run.
+    Save an alert as not-yet-sent. It's sent (and marked sent) by the
+    next run of its source. sent=True records it as already sent (used
+    by Simplify's --baseline, so later dedupe still sees it).
     """
 
     conn = sqlite3.connect(db_path)
@@ -27,22 +30,25 @@ def save_alert(
         title,
         location,
         application_url,
-        sms_sent
+        sms_sent,
+        source
     )
-    VALUES (?, ?, ?, ?, ?, 0)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
     """, (
         str(datetime.now()),
         company,
         title,
         location,
-        application_url
+        application_url,
+        1 if sent else 0,
+        source,
     ))
 
     conn.commit()
     conn.close()
 
     print(
-        f"Alert saved: {company}"
+        f"Alert saved ({source}): {company}"
     )
 
 
@@ -62,7 +68,9 @@ def was_recently_texted(company, title, days=14, db_path=DB_PATH):
     row = conn.execute(
         """
         SELECT 1 FROM alerts
-        WHERE company = ? AND title = ? AND sms_sent = 1
+        WHERE company = ? COLLATE NOCASE
+          AND TRIM(title) = TRIM(?) COLLATE NOCASE
+          AND sms_sent = 1
           AND timestamp >= ?
         LIMIT 1
         """,
@@ -74,7 +82,36 @@ def was_recently_texted(company, title, days=14, db_path=DB_PATH):
     return row is not None
 
 
-def get_unsent_alerts(db_path=DB_PATH):
+def has_recent_alert(company, title, days=14, db_path=DB_PATH):
+    """
+    True if ANY alert (sent or still queued, from either source) exists
+    for this company + title in the last `days` days. Simplify uses this
+    to skip roles the career-site monitor already alerted on (and vice
+    versa, the monitor's was_recently_texted sees Simplify's rows).
+    Case- and surrounding-whitespace-insensitive.
+    """
+
+    cutoff = str(datetime.now() - timedelta(days=days))
+
+    conn = sqlite3.connect(db_path)
+
+    row = conn.execute(
+        """
+        SELECT 1 FROM alerts
+        WHERE company = ? COLLATE NOCASE
+          AND TRIM(title) = TRIM(?) COLLATE NOCASE
+          AND timestamp >= ?
+        LIMIT 1
+        """,
+        (company.strip(), title, cutoff)
+    ).fetchone()
+
+    conn.close()
+
+    return row is not None
+
+
+def get_unsent_alerts(db_path=DB_PATH, source="monitor"):
 
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
@@ -83,9 +120,10 @@ def get_unsent_alerts(db_path=DB_PATH):
         """
         SELECT id, company, title, location, application_url
         FROM alerts
-        WHERE sms_sent = 0
+        WHERE sms_sent = 0 AND source = ?
         ORDER BY id
-        """
+        """,
+        (source,)
     ).fetchall()
 
     conn.close()

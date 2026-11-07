@@ -74,3 +74,9 @@ def test_state_codes_must_be_uppercase_tokens():
     as Indiana/Oregon/Maine."""
 
     assert classify_location("Building in the main campus") == UNKNOWN
+
+
+@pytest.mark.parametrize("location", ["NYC", "SF", "South SF", "Bay Area"])
+def test_simplify_city_shorthands_are_us(location):
+
+    assert classify_location(location) == US

@@ -20,14 +20,13 @@ from database_monitor import (
 )
 from database_alerts import get_unsent_alerts, mark_alerts_sent
 from role_classifier import is_target_role, is_ineligible
-from location_filter import (
-    classify_location,
-    UNKNOWN,
-    NON_US,
-    UNKNOWN_LOCATION_LABEL,
-)
+from location_filter import classify_location, UNKNOWN, NON_US
+from alert_message import alert_title, build_alert_body
 import posting_location
 from sms_alerts import send_alert
+
+# Shown in the notification so these can be told apart from Simplify's.
+SOURCE_LABEL = "Career sites"
 
 
 def _eightfold_adapter(company):
@@ -258,12 +257,10 @@ def _send_pending_alerts(summary):
     if not pending:
         return
 
-    count = len(pending)
-    title = (
-        "1 new internship" if count == 1 else f"{count} new internships"
-    )
-
-    if send_alert(_build_batch_sms_body(pending), title=title):
+    if send_alert(
+        _build_batch_sms_body(pending),
+        title=alert_title(len(pending), SOURCE_LABEL),
+    ):
 
         mark_alerts_sent([alert["id"] for alert in pending])
 
@@ -275,77 +272,8 @@ def _send_pending_alerts(summary):
 
 
 def _build_batch_sms_body(new_alerts):
-    """
-    Consolidates all of this run's new-internship alerts into ONE
-    message (one SMTP send), instead of one text per internship.
-    Carriers' email-to-SMS gateways (e.g. T-Mobile's tmomail.net)
-    rate-limit and will bounce/block a sender that fires off many
-    separate messages in a burst - a single run that finds several new
-    postings at once (e.g. right after adding a new company) would
-    otherwise trigger exactly that. Listing everything in one email
-    doesn't have that problem even if the carrier splits it into
-    multiple physical texts on the receiving end, since it's still one
-    send from this end.
-    """
 
-    count = len(new_alerts)
-
-    if count == 1:
-
-        internship = new_alerts[0]
-
-        return (
-            f"New internship: {internship['company']} - "
-            f"{internship['title']} "
-            f"{_location_label(internship.get('location'))}\n"
-            f"{internship.get('application_url', '')}"
-        )
-
-    # Group same-named postings at the same company together (e.g. a
-    # company opening 5 identical "Software Engineering Intern" reqs at
-    # once) so the text reads as one role with 5 links, not 5 separate
-    # near-duplicate entries.
-    groups = {}
-    group_order = []
-
-    for internship in new_alerts:
-
-        key = (internship["company"], internship["title"])
-
-        if key not in groups:
-            groups[key] = []
-            group_order.append(key)
-
-        groups[key].append(internship)
-
-    lines = [f"{count} new internships found:"]
-
-    for key in group_order:
-
-        company, title = key
-        items = groups[key]
-
-        lines.append("")
-        lines.append(f"{title} - {company}")
-
-        for item in items:
-
-            url = item.get("application_url", "")
-
-            if classify_location(item.get("location")) == UNKNOWN:
-                url = f"{url} {UNKNOWN_LOCATION_LABEL}"
-
-            lines.append(url)
-
-    return "\n".join(lines)
-
-
-def _location_label(location):
-
-    if classify_location(location) == UNKNOWN:
-        return UNKNOWN_LOCATION_LABEL
-
-    return f"({location})"
+    return build_alert_body(new_alerts, source_label=SOURCE_LABEL)
 
 
 def _resolve_location(company, internship, browser=None):

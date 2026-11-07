@@ -47,6 +47,13 @@ _US_COUNTRY_RE = re.compile(
 )
 _US_TOKEN_RE = re.compile(r"(?<![A-Za-z])US(?![A-Za-z])")
 
+# City shorthands Simplify uses with no state attached ("NYC", "SF",
+# "South SF"). Uppercase-only so ordinary words don't match.
+_US_SHORTHAND_RE = re.compile(
+    r"(?<![A-Za-z])(?:NYC|SF|South SF)(?![A-Za-z])|\bBay Area\b|"
+    r"\bSilicon Valley\b"
+)
+
 _STATE_NAME_RE = re.compile(
     r"\b(?:" + "|".join(sorted(map(re.escape, _US_STATES.values()),
                                key=len, reverse=True)) + r")\b",
@@ -176,7 +183,11 @@ def _classify_segment(segment):
     if site_code:
         return US if site_code.group(1) == "USA" else NON_US
 
-    if _US_COUNTRY_RE.search(segment) or _US_TOKEN_RE.search(segment):
+    if (
+        _US_COUNTRY_RE.search(segment)
+        or _US_TOKEN_RE.search(segment)
+        or _US_SHORTHAND_RE.search(segment)
+    ):
         return US
 
     # "New Mexico" must not trip the "mexico" country check.
