@@ -455,3 +455,35 @@ def test_old_alerts_table_gets_source_column(tmp_path):
 
     assert row == ("monitor",)
     assert "simplify_seen" in tables
+
+
+def test_graduate_only_degrees_are_dropped():
+    """Simplify's degrees list: PhD/Master's-only postings never alert."""
+
+    from role_classifier import is_ineligible_listing
+
+    # The Microsoft and Meta PhD research roles that slipped through.
+    assert is_ineligible_listing("Research Intern - Next-Generation AI Agents", ["PhD"])
+    assert is_ineligible_listing(
+        "Research Scientist Intern - Computational Photography & Computer Vision", []
+    )
+    assert is_ineligible_listing("ML Intern", ["Master's", "PhD"])
+    assert is_ineligible_listing("Analytics Intern", ["MBA"])
+
+    # Open to undergrads.
+    assert not is_ineligible_listing("SWE Intern", ["Bachelor's"])
+    assert not is_ineligible_listing("SWE Intern", ["Bachelor's", "Master's", "PhD"])
+    assert not is_ineligible_listing("SWE Intern", [])
+    assert not is_ineligible_listing("Research Scientist Intern", ["Bachelor's"])
+
+    # An explicit grad-only title still wins over Simplify's degrees.
+    assert is_ineligible_listing("Design Verification Intern - MS/PhD", ["Bachelor's"])
+
+
+def test_research_scientist_title_is_ineligible_on_career_sites():
+
+    from role_classifier import is_ineligible
+
+    assert is_ineligible("Research Scientist Intern - Computer Vision")
+    assert not is_ineligible("Undergraduate Research Scientist Intern")
+    assert not is_ineligible("Software Engineering Intern")

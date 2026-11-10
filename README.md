@@ -100,7 +100,10 @@ rows, and an alert is only created the first time a posting is seen.
     business-function word such as marketing, sales, pricing, commercial,
     finance, or HR. So "Digital Marketing Intern" doesn't alert.
 - **Eligible.** PhD/Master's-only, SkillBridge, and high-school postings
-  never alert (`is_ineligible()`).
+  never alert (`is_ineligible()`). That's caught from the title ("PhD",
+  "Master's", "Research Scientist Intern") and, for Simplify listings,
+  from Simplify's degrees field: a listing open only to Master's/PhD/MBA
+  students is dropped (`is_ineligible_listing()`).
 - **US only.** `src/location_filter.py` classifies each location as US,
   non-US, or unknown. Known non-US postings never alert.
   - For an unknown location (e.g. Workday's "4 Locations", or the browser

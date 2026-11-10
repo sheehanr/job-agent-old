@@ -24,7 +24,7 @@ from database_alerts import (
     get_unsent_alerts,
     mark_alerts_sent,
 )
-from role_classifier import classify_role, is_ineligible
+from role_classifier import classify_role, is_ineligible_listing
 from location_filter import classify_location, US
 from alert_message import alert_title, build_alert_body
 from sms_alerts import send_alert
@@ -236,7 +236,7 @@ def match_listing(listing, watchlist, today=None):
     if not passes_role_filter(listing):
         return None
 
-    if is_ineligible(listing.get("title") or ""):
+    if is_ineligible_listing(listing.get("title") or "", listing.get("degrees")):
         return None
 
     return canonical

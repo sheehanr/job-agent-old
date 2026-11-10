@@ -176,6 +176,10 @@ _GRAD_ONLY_RE = re.compile(
 
 _UNDERGRAD_RE = re.compile(r"\bundergrad", re.IGNORECASE)
 
+# "Research Scientist Intern" (Meta, most pharma) is a PhD program even
+# when the title doesn't say so.
+_RESEARCH_SCIENTIST_RE = re.compile(r"\bresearch scientist", re.IGNORECASE)
+
 
 def is_grad_only(title):
     """
@@ -201,7 +205,55 @@ def is_ineligible(title):
     if not title:
         return False
 
-    return is_grad_only(title) or bool(_NOT_COLLEGE_RE.search(title))
+    return (
+        is_grad_only(title)
+        or is_research_scientist(title)
+        or bool(_NOT_COLLEGE_RE.search(title))
+    )
+
+
+def is_research_scientist(title):
+
+    return bool(title) and bool(_RESEARCH_SCIENTIST_RE.search(title)) \
+        and not _UNDERGRAD_RE.search(title)
+
+
+UNDERGRAD_DEGREES = {"bachelor's", "associate's"}
+
+
+def degrees_allow_undergrad(degrees):
+    """
+    Simplify's "degrees" list for a posting. None means unknown (empty
+    list); otherwise True only if a Bachelor's/Associate's student can
+    apply, so ["PhD"], ["Master's", "PhD"], ["MBA"] are all False.
+    """
+
+    if not degrees:
+        return None
+
+    return any(str(d).strip().lower() in UNDERGRAD_DEGREES for d in degrees)
+
+
+def is_ineligible_listing(title, degrees):
+    """
+    is_ineligible for a Simplify listing, which also knows the accepted
+    degrees. A listing Simplify marks as open to Bachelor's students
+    isn't dropped just for being a "Research Scientist" title, but an
+    explicit "PhD"/"Master's" in the title still wins.
+    """
+
+    allow = degrees_allow_undergrad(degrees)
+
+    if allow is False:
+        return True
+
+    if is_grad_only(title) or _NOT_COLLEGE_RE.search(title or ""):
+        return True
+
+    if allow is True:
+        return False
+
+    return is_research_scientist(title)
 
 
 def classify_role(title):
