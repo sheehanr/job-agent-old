@@ -1,22 +1,29 @@
 """
-Builds the one-per-run phone notification, shared by both alert sources
-(the career-site monitor and the Simplify listings).
+Builds the phone notifications, shared by both alert sources (the
+career-site monitor and the Simplify listings). Where a posting came from
+isn't shown - the link goes to the company's own application page either
+way.
+
+One notification per role:
+    title: "Stryker - SWE Intern (Portage, MI)"
+    body:  the apply link (tapping the notification opens it too)
+
+The same role posted in several locations is one notification with each
+location and link in the body. A company posting GROUP_AT or more roles in
+one run is a single "Meta - 6 new roles" notification instead of six.
 """
 
 from location_filter import classify_location, UNKNOWN, UNKNOWN_LOCATION_LABEL
 
-
-def alert_title(count, source_label):
-    """Notification title, e.g. "Simplify: 3 new internships"."""
-
-    noun = "1 new internship" if count == 1 else f"{count} new internships"
-
-    return f"{source_label}: {noun}"
+# A company with this many new roles in one run gets one notification.
+GROUP_AT = 4
 
 
 def _location_label(location, max_places=3):
 
     if classify_location(location) == UNKNOWN:
+        if "remote" in str(location or "").lower():
+            return "(Remote)"
         return UNKNOWN_LOCATION_LABEL
 
     # Simplify listings can name a dozen cities - keep the line readable.
@@ -30,54 +37,103 @@ def _location_label(location, max_places=3):
     return f"({location})"
 
 
-def build_alert_body(new_alerts, source_label=None):
-    """
-    Body of the one-per-run notification. The title (see alert_title)
-    already carries the source and the count, so the body is just the
-    postings: a "Title - Company" header per role, then its apply link(s).
-    Same company + title postings share one header. Every posting's apply
-    link is always included.
-
-    source_label is accepted for symmetry with alert_title but isn't
-    repeated in the body.
-    """
+def _group(items, key):
 
     groups = {}
-    group_order = []
 
-    for internship in new_alerts:
+    for item in items:
+        groups.setdefault(key(item), []).append(item)
 
-        key = (internship["company"], internship["title"])
+    return groups
 
-        if key not in groups:
-            groups[key] = []
-            group_order.append(key)
 
-        groups[key].append(internship)
+def _role_lines(items):
+    """Apply links for one role: just the link, or location + link per
+    posting when the same role has several postings."""
 
-    blocks = []
+    if len(items) == 1:
+        return [items[0].get("application_url", "")]
 
-    for key in group_order:
+    lines = []
 
-        company, title = key
-        items = groups[key]
+    for item in items:
+        lines.append(_location_label(item.get("location")).strip("()"))
+        lines.append(item.get("application_url", ""))
 
-        header = f"{title} - {company}"
+    return lines
 
-        if len(items) == 1:
-            header = f"{header} {_location_label(items[0].get('location'))}"
 
-        lines = [header]
+def build_notifications(new_alerts, group_at=GROUP_AT):
+    """
+    Turn queued alerts into notifications. Returns a list of dicts:
+    title, body, click (URL opened by tapping, or None), and ids (the
+    alert ids it covers, so each is marked sent only once delivered).
+    Every posting's apply link is always included.
+    """
 
-        for item in items:
+    notifications = []
 
-            url = item.get("application_url", "")
+    by_company = _group(new_alerts, lambda a: a["company"])
 
-            if len(items) > 1 and classify_location(item.get("location")) == UNKNOWN:
-                url = f"{url} {UNKNOWN_LOCATION_LABEL}"
+    for company, company_alerts in by_company.items():
 
-            lines.append(url)
+        roles = _group(company_alerts, lambda a: a["title"])
+        ids = [a.get("id") for a in company_alerts]
 
-        blocks.append("\n".join(lines))
+        if len(roles) >= group_at:
 
-    return "\n\n".join(blocks)
+            blocks = []
+
+            for title, items in roles.items():
+                header = title
+                if len(items) == 1:
+                    header = f"{title} {_location_label(items[0].get('location'))}"
+                blocks.append("\n".join([header] + _role_lines(items)))
+
+            notifications.append({
+                "title": f"{company} - {len(roles)} new roles",
+                "body": "\n\n".join(blocks),
+                "click": None,
+                "ids": ids,
+            })
+
+            continue
+
+        for title, items in roles.items():
+
+            heading = f"{company} - {title}"
+            click = None
+
+            if len(items) == 1:
+                heading = f"{heading} {_location_label(items[0].get('location'))}"
+                click = items[0].get("application_url") or None
+
+            notifications.append({
+                "title": heading,
+                "body": "\n".join(_role_lines(items)),
+                "click": click,
+                "ids": [a.get("id") for a in items],
+            })
+
+    return notifications
+
+
+def send_notifications(pending, send, mark_sent):
+    """
+    Send each notification for the queued alerts with send(body, title,
+    click); mark_sent(ids) runs only after that notification is
+    delivered, so a failure leaves just its own alerts queued for the
+    next run. Returns (notifications sent, alerts still held).
+    """
+
+    sent = held = 0
+
+    for note in build_notifications(pending):
+
+        if send(note["body"], title=note["title"], click=note["click"]):
+            mark_sent(note["ids"])
+            sent += 1
+        else:
+            held += len(note["ids"])
+
+    return sent, held

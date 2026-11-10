@@ -21,12 +21,11 @@ from database_monitor import (
 from database_alerts import get_unsent_alerts, mark_alerts_sent
 from role_classifier import is_target_role, is_ineligible
 from location_filter import classify_location, UNKNOWN, NON_US
-from alert_message import alert_title, build_alert_body
+from alert_message import send_notifications
 import posting_location
 from sms_alerts import send_alert
 
 # Shown in the notification so these can be told apart from Simplify's.
-SOURCE_LABEL = "Career sites"
 
 
 def _eightfold_adapter(company):
@@ -246,10 +245,10 @@ def _baseline_pending_alerts(summary):
 
 def _send_pending_alerts(summary):
     """
-    Send every queued (not yet sent) alert in one notification, at any
-    hour (quiet hours are left to the phone's own Do Not Disturb). Only
-    marks them sent once the send succeeds, so a failed send is retried
-    by the next run instead of lost.
+    Send every queued (not yet sent) alert, one notification per role, at
+    any hour (quiet hours are left to the phone's own Do Not Disturb).
+    Each alert is only marked sent once its notification is delivered, so
+    a failed send is retried by the next run instead of lost.
     """
 
     pending = get_unsent_alerts()
@@ -257,23 +256,10 @@ def _send_pending_alerts(summary):
     if not pending:
         return
 
-    if send_alert(
-        _build_batch_sms_body(pending),
-        title=alert_title(len(pending), SOURCE_LABEL),
-    ):
+    sent, held = send_notifications(pending, send_alert, mark_alerts_sent)
 
-        mark_alerts_sent([alert["id"] for alert in pending])
-
-        summary["sms_sent"] += 1
-
-    else:
-
-        summary["alerts_held"] = len(pending)
-
-
-def _build_batch_sms_body(new_alerts):
-
-    return build_alert_body(new_alerts, source_label=SOURCE_LABEL)
+    summary["sms_sent"] += sent
+    summary["alerts_held"] = held
 
 
 def _resolve_location(company, internship, browser=None):

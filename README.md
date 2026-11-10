@@ -48,8 +48,7 @@ Alerts are deliberately narrow. A posting only alerts if it is:
 - not PhD/Master's-only, and
 - not already alerted.
 
-Each source sends one notification per run, listing every new posting with
-its apply link. This is a discovery and alerting tool, not an application
+Each new role gets its own notification with its apply link. This is a discovery and alerting tool, not an application
 tracker: it doesn't track saved jobs, applications, or interviews.
 
 ## Architecture
@@ -196,14 +195,22 @@ python src/simplify_alerts.py --report-unmatched
 
 ## Alerts
 
-Each run sends **one** notification per source. The title carries the
-source and count (e.g. "Simplify: 3 new internships"), and the body lists
-each posting as "Title - Company (location)" followed by its apply link.
-Every apply link is always in the notification: if a batch is too long for
-one ntfy push (about 4 KB), it's split across several pushes, numbered
-"(1/2)", "(2/2)", and never trimmed. Alerts go out at any hour, because there is no texting window; use your phone's Do
-Not Disturb for quiet hours. A failed send leaves the alerts queued for the
-next run.
+Each new role gets **its own** notification (`src/alert_message.py`):
+
+- Title: "Company - Role (location)", e.g. "Stryker - SWE Intern (Portage, MI)".
+- Body: the apply link. Tapping the notification opens it too.
+- The same role posted in several locations is one notification, with each
+  location and its link in the body.
+- A company posting 4 or more roles in one run gets one "Meta - 6 new
+  roles" notification listing each role and link, so the phone doesn't
+  buzz six times.
+
+Which source found it (career site or Simplify) isn't shown; the link
+goes to the company's own application page either way. Every apply link
+is always included: a notification too long for one ntfy push (about 4 KB)
+is split into numbered parts, "(1/2)", "(2/2)", never trimmed. Alerts go out at any hour, because there is no texting window; use your phone's Do
+Not Disturb for quiet hours. A failed send leaves that notification's
+alerts queued for the next run.
 
 **ntfy push (primary).** When `NTFY_TOPIC` is set, alerts are posted to
 [ntfy.sh](https://ntfy.sh).

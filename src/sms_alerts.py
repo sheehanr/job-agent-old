@@ -15,7 +15,7 @@ NTFY_DEFAULT_SERVER = "https://ntfy.sh"
 NTFY_MAX_BYTES = 4000
 
 
-def send_alert(body, title="New internships"):
+def send_alert(body, title="New internships", click=None):
     """
     Send one phone alert for this run. Uses an ntfy.sh push when
     NTFY_TOPIC is set, otherwise falls back to the email-to-SMS text.
@@ -25,7 +25,7 @@ def send_alert(body, title="New internships"):
     """
 
     if os.environ.get("NTFY_TOPIC", "").strip():
-        return send_ntfy_alert(body, title=title)
+        return send_ntfy_alert(body, title=title, click=click)
 
     # A text has no separate title line, so put it at the top.
     return send_sms_alert(f"{title}\n\n{body}" if title else body)
@@ -75,7 +75,7 @@ def split_ntfy_body(body, limit=NTFY_MAX_BYTES):
     return chunks
 
 
-def send_ntfy_alert(body, title="New internships"):
+def send_ntfy_alert(body, title="New internships", click=None):
     """
     Push via ntfy.sh (https://ntfy.sh): install the ntfy app, subscribe
     to NTFY_TOPIC, and every POST to https://ntfy.sh/<topic> shows up as
@@ -99,6 +99,10 @@ def send_ntfy_alert(body, title="New internships"):
         "Title": title.encode("ascii", "ignore").decode(),
         "Priority": "default",
     }
+
+    if click:
+        # Tapping the notification opens this link (the apply page).
+        headers["Click"] = click
 
     token = os.environ.get("NTFY_TOKEN", "").strip()
 

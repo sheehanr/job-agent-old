@@ -269,7 +269,7 @@ def sends(monkeypatch):
 
     sent = []
 
-    def fake_send(body, title=None):
+    def fake_send(body, title=None, click=None):
         sent.append((title, body))
         return True
 
@@ -304,7 +304,7 @@ def test_first_run_is_automatic_baseline(test_db, watchlist_path,
     assert database_alerts.get_unsent_alerts(test_db, source="simplify") == []
 
 
-def test_new_match_alerts_once_labelled_simplify(test_db, watchlist_path,
+def test_new_match_alerts_once_one_notification_per_role(test_db, watchlist_path,
                                                  pinned_today, sends):
 
     _seed_seen(test_db, watchlist_path)
@@ -319,15 +319,12 @@ def test_new_match_alerts_once_labelled_simplify(test_db, watchlist_path,
     summary = _run(test_db, watchlist_path, listings)
 
     assert summary["alerts_sent"] == 2
-    assert len(sends) == 1
-    title, body = sends[0]
-    assert title == "Simplify: 2 new internships"
-    # Source and count are in the title only, not repeated in the body.
-    assert "Simplify" not in body
-    assert "new internships" not in body
-    assert "https://epic/1" in body
-    assert "Software Developer Intern - Epic Systems" in body
-    assert "Gameplay" not in body
+    assert sends == [
+        ("Google - Software Engineering Intern (Mountain View, CA)",
+         "https://careers.google.com/jobs/1"),
+        ("Epic Systems - Software Developer Intern (Verona, WI)",
+         "https://epic/1"),
+    ]
 
     # Same listings next run: already seen, nothing new.
     sends.clear()
@@ -398,7 +395,7 @@ def test_failed_send_stays_queued_and_retries(test_db, watchlist_path,
 
     _seed_seen(test_db, watchlist_path)
 
-    monkeypatch.setattr(sa, "send_alert", lambda body, title=None: False)
+    monkeypatch.setattr(sa, "send_alert", lambda body, title=None, click=None: False)
 
     _run(test_db, watchlist_path, [_listing(id="q")])
 
@@ -407,7 +404,7 @@ def test_failed_send_stays_queued_and_retries(test_db, watchlist_path,
     retried = []
     monkeypatch.setattr(
         sa, "send_alert",
-        lambda body, title=None: retried.append(body) or True
+        lambda body, title=None, click=None: retried.append(body) or True
     )
 
     _run(test_db, watchlist_path, [_listing(id="q")])

@@ -15,116 +15,6 @@ def _make_internship(company, title, location="Remote", url="https://example.com
     }
 
 
-def test_single_alert_uses_full_detail_format():
-
-    alerts = [_make_internship("Acme", "SWE Intern", "Remote", "https://acme.com/j/1")]
-
-    body = svc._build_batch_sms_body(alerts)
-
-    assert "Acme" in body
-    assert "SWE Intern" in body
-    assert "https://acme.com/j/1" in body
-
-
-def test_multiple_alerts_produce_one_consolidated_message():
-
-    alerts = [
-        _make_internship("Acme", "SWE Intern"),
-        _make_internship("Globex", "ML Intern"),
-        _make_internship("Initech", "Data Intern"),
-    ]
-
-    body = svc._build_batch_sms_body(alerts)
-
-    # One message, not one per internship - all companies appear in it.
-    # The count lives in the notification title, not repeated in the body.
-    assert "new internships" not in body
-    assert "Career sites" not in body
-    assert "Acme" in body
-    assert "Globex" in body
-    assert "Initech" in body
-
-
-def test_same_role_same_company_grouped_with_all_links():
-    """
-    User request: when a company opens several reqs under the same
-    title (e.g. 5 "Software Engineering Intern" postings at once), show
-    one "Title - Company" header followed by all 5 links back to back,
-    rather than repeating the title/company on every line.
-    """
-
-    alerts = [
-        _make_internship(
-            "Lockheed Martin", "Embedded Software Engineer Intern",
-            "Fort Worth, TX", "https://lm.com/job/1"
-        ),
-        _make_internship(
-            "Lockheed Martin", "Embedded Software Engineer Intern",
-            "Austin, TX", "https://lm.com/job/2"
-        ),
-        _make_internship(
-            "Lockheed Martin", "Embedded Software Engineer Intern",
-            "Remote", "https://lm.com/job/3"
-        ),
-        _make_internship(
-            "Lockheed Martin", "Embedded Software Engineer Intern",
-            "Denver, CO", "https://lm.com/job/4"
-        ),
-        _make_internship(
-            "Lockheed Martin", "Embedded Software Engineer Intern",
-            "Orlando, FL", "https://lm.com/job/5"
-        ),
-        _make_internship(
-            "Boeing", "Software Engineering Intern",
-            "Seattle, WA", "https://boeing.com/job/9"
-        ),
-    ]
-
-    body = svc._build_batch_sms_body(alerts)
-
-    assert "new internships found" not in body
-    # One header for the 5 identically-titled Lockheed Martin postings.
-    assert body.count("Embedded Software Engineer Intern - Lockheed Martin") == 1
-    assert body.count("Software Engineering Intern - Boeing") == 1
-
-    for i in range(1, 6):
-        assert f"https://lm.com/job/{i}" in body
-
-    assert "https://boeing.com/job/9" in body
-
-
-def test_large_batch_is_one_message_listing_everything():
-    """
-    Regression test: the bug that got 40 SEPARATE texts sent in one run
-    and bounced from the carrier gateway. A large batch must still be
-    exactly one send (one call to send_sms_alert / one SMTP transaction)
-    - that's what avoids the carrier's burst-spam detection, regardless
-    of how many postings end up listed inside that single message.
-    """
-
-    alerts = [
-        _make_internship(
-            f"Company{i}", f"Intern Role {i}", url=f"https://example.com/job/{i}"
-        )
-        for i in range(40)
-    ]
-
-    body = svc._build_batch_sms_body(alerts)
-
-    assert "new internships" not in body
-
-    # Each of the 40 distinct roles gets its own header line.
-    header_lines = [
-        line for line in body.split("\n")
-        if line.startswith("Intern Role")
-    ]
-    assert len(header_lines) == 40
-    assert "Company0" in body
-    assert "Company39" in body
-    assert "https://example.com/job/0" in body
-    assert "https://example.com/job/39" in body
-
-
 def _patch_pending(monkeypatch, pending, send_result=True):
 
     sent_bodies = []
@@ -133,8 +23,8 @@ def _patch_pending(monkeypatch, pending, send_result=True):
     monkeypatch.setattr(svc, "get_unsent_alerts", lambda: pending)
     monkeypatch.setattr(svc, "mark_alerts_sent", lambda ids: marked.extend(ids))
 
-    def fake_send(body, title=None):
-        sent_bodies.append(body)
+    def fake_send(body, title=None, click=None):
+        sent_bodies.append((title, body))
         return send_result
 
     monkeypatch.setattr(svc, "send_alert", fake_send)
@@ -147,23 +37,25 @@ _PENDING = [
     {"id": 2, **_make_internship("Globex", "ML Intern", url="https://g/2")},
 ]
 
-def test_pending_alerts_sent_together(monkeypatch):
+def test_no_quiet_hours_window():
+    """Alerts go out 24/7 - quiet hours are the phone's job now."""
+
+    assert not hasattr(svc, "in_texting_window")
+
+
+def test_each_role_is_its_own_notification(monkeypatch):
 
     sent, marked = _patch_pending(monkeypatch, _PENDING)
     summary = {"sms_sent": 0, "alerts_held": 0}
 
     svc._send_pending_alerts(summary)
 
-    assert len(sent) == 1
-    assert "Acme" in sent[0] and "Globex" in sent[0]
+    assert [title for title, _ in sent] == [
+        "Acme - SWE Intern (Remote)",
+        "Globex - ML Intern (Remote)",
+    ]
     assert marked == [1, 2]
-    assert summary["sms_sent"] == 1
-
-
-def test_no_quiet_hours_window():
-    """Alerts go out 24/7 - quiet hours are the phone's job now."""
-
-    assert not hasattr(svc, "in_texting_window")
+    assert summary["sms_sent"] == 2
 
 
 def test_failed_send_keeps_alerts_queued(monkeypatch):
@@ -173,39 +65,9 @@ def test_failed_send_keeps_alerts_queued(monkeypatch):
 
     svc._send_pending_alerts(summary)
 
-    assert len(sent) == 1
+    assert len(sent) == 2
     assert marked == []
     assert summary["alerts_held"] == 2
-
-
-def test_unknown_location_is_labelled_in_alert_body():
-
-    single = svc._build_batch_sms_body([
-        _make_internship("Epic", "Software Developer Intern", "Unknown",
-                         "https://epic.com/j/1")
-    ])
-
-    assert "(location unknown)" in single
-
-    batch = svc._build_batch_sms_body([
-        _make_internship("Epic", "Software Developer Intern", "Unknown",
-                         "https://epic.com/j/1"),
-        _make_internship("Insulet", "DevOps Intern", "Acton, Massachusetts",
-                         "https://insulet.com/j/2"),
-    ])
-
-    assert "Software Developer Intern - Epic (location unknown)" in batch
-    assert "DevOps Intern - Insulet (Acton, Massachusetts)" in batch
-    assert batch.count("(location unknown)") == 1
-
-    # Several postings under one title: the label goes on the link.
-    grouped = svc._build_batch_sms_body([
-        _make_internship("Epic", "SWE Intern", "Unknown", "https://epic.com/j/1"),
-        _make_internship("Epic", "SWE Intern", "Verona, WI", "https://epic.com/j/2"),
-    ])
-
-    assert "https://epic.com/j/1 (location unknown)" in grouped
-    assert "https://epic.com/j/2 (location unknown)" not in grouped
 
 
 def test_baseline_marks_queued_alerts_sent_without_sending(monkeypatch):
@@ -358,34 +220,3 @@ def test_no_lookup_for_non_target_roles(monkeypatch):
     assert lookups == []
 
 
-def test_body_has_no_repeated_header_and_every_apply_link():
-
-    from alert_message import alert_title
-
-    alerts = [
-        _make_internship("Insulet", "DevOps Intern", "Acton, Massachusetts",
-                         "https://insulet.com/j/1"),
-        _make_internship("Stryker", "SWE Intern", "Portage, Michigan",
-                         "https://stryker.com/j/2"),
-    ]
-
-    body = svc._build_batch_sms_body(alerts)
-
-    assert body == (
-        "DevOps Intern - Insulet (Acton, Massachusetts)\n"
-        "https://insulet.com/j/1\n"
-        "\n"
-        "SWE Intern - Stryker (Portage, Michigan)\n"
-        "https://stryker.com/j/2"
-    )
-    assert alert_title(2, svc.SOURCE_LABEL) == "Career sites: 2 new internships"
-
-
-def test_single_alert_body_is_just_the_posting():
-
-    body = svc._build_batch_sms_body([
-        _make_internship("Stryker", "SWE Intern", "Portage, Michigan",
-                         "https://stryker.com/j/2")
-    ])
-
-    assert body == "SWE Intern - Stryker (Portage, Michigan)\nhttps://stryker.com/j/2"

@@ -26,7 +26,7 @@ from database_alerts import (
 )
 from role_classifier import classify_role, is_ineligible_listing
 from location_filter import classify_location, US
-from alert_message import alert_title, build_alert_body
+from alert_message import send_notifications
 from sms_alerts import send_alert
 
 LISTINGS_URL = (
@@ -39,7 +39,6 @@ WATCHLIST_PATH = os.path.join(
 )
 
 SOURCE = "simplify"
-SOURCE_LABEL = "Simplify"
 
 ALLOWED_CATEGORIES = {
     "Software",
@@ -385,12 +384,13 @@ def _send_pending(summary, db_path):
     if not pending:
         return
 
-    if send_alert(
-        build_alert_body(pending, source_label=SOURCE_LABEL),
-        title=alert_title(len(pending), SOURCE_LABEL),
-    ):
-        mark_alerts_sent([a["id"] for a in pending], db_path=db_path)
-        summary["alerts_sent"] = len(pending)
+    sent, held = send_notifications(
+        pending,
+        send_alert,
+        lambda ids: mark_alerts_sent(ids, db_path=db_path),
+    )
+
+    summary["alerts_sent"] = len(pending) - held
 
 
 def _print_summary(summary):
