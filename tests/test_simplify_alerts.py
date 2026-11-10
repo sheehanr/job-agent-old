@@ -320,10 +320,10 @@ def test_new_match_alerts_once_one_notification_per_role(test_db, watchlist_path
 
     assert summary["alerts_sent"] == 2
     assert sends == [
-        ("Google - Software Engineering Intern (Mountain View, CA)",
-         "https://careers.google.com/jobs/1"),
-        ("Epic Systems - Software Developer Intern (Verona, WI)",
-         "https://epic/1"),
+        ("Google - Software Engineering Intern",
+         "https://careers.google.com/jobs/1\n(Mountain View, CA)"),
+        ("Epic Systems - Software Developer Intern",
+         "https://epic/1\n(Verona, WI)"),
     ]
 
     # Same listings next run: already seen, nothing new.

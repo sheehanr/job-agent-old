@@ -2,21 +2,34 @@
 Builds the phone notifications, shared by both alert sources (the
 career-site monitor and the Simplify listings). Where a posting came from
 isn't shown - the link goes to the company's own application page either
-way.
+way. The location goes under each link, never in the title.
 
-One notification per role:
-    title: "Stryker - SWE Intern (Portage, MI)"
-    body:  the apply link (tapping the notification opens it too)
+One role:
+    Stryker - SWE Intern
+    https://stryker.com/...
+    (Portage, MI)
 
-The same role posted in several locations is one notification with each
-location and link in the body. A company posting GROUP_AT or more roles in
-one run is a single "Meta - 6 new roles" notification instead of six.
+Same role, 2 or more locations (one link + location per block):
+    Lockheed - Embedded Intern
+    https://...
+    (Austin, TX)
+
+    https://...
+    (Denver, CO)
+
+Same company, 2 or more roles in one run:
+    Meta - 2 new roles
+    ML Intern: https://...
+    (Menlo Park, CA)
+
+    SWE Intern: https://...
+    (Seattle, WA)
 """
 
 from location_filter import classify_location, UNKNOWN, UNKNOWN_LOCATION_LABEL
 
 # A company with this many new roles in one run gets one notification.
-GROUP_AT = 4
+GROUP_AT = 2
 
 
 def _location_label(location, max_places=3):
@@ -47,20 +60,14 @@ def _group(items, key):
     return groups
 
 
-def _role_lines(items):
-    """Apply links for one role: just the link, or location + link per
-    posting when the same role has several postings."""
+def _posting_block(item, role=None):
+    """Link (prefixed with the role when grouping several roles), then
+    the location in parentheses on the next line."""
 
-    if len(items) == 1:
-        return [items[0].get("application_url", "")]
+    url = item.get("application_url", "")
+    link = f"{role}: {url}" if role else url
 
-    lines = []
-
-    for item in items:
-        lines.append(_location_label(item.get("location")).strip("()"))
-        lines.append(item.get("application_url", ""))
-
-    return lines
+    return f"{link}\n{_location_label(item.get('location'))}"
 
 
 def build_notifications(new_alerts, group_at=GROUP_AT):
@@ -78,40 +85,31 @@ def build_notifications(new_alerts, group_at=GROUP_AT):
     for company, company_alerts in by_company.items():
 
         roles = _group(company_alerts, lambda a: a["title"])
-        ids = [a.get("id") for a in company_alerts]
 
         if len(roles) >= group_at:
 
-            blocks = []
-
-            for title, items in roles.items():
-                header = title
-                if len(items) == 1:
-                    header = f"{title} {_location_label(items[0].get('location'))}"
-                blocks.append("\n".join([header] + _role_lines(items)))
-
             notifications.append({
                 "title": f"{company} - {len(roles)} new roles",
-                "body": "\n\n".join(blocks),
+                "body": "\n\n".join(
+                    _posting_block(item, role=title)
+                    for title, items in roles.items()
+                    for item in items
+                ),
                 "click": None,
-                "ids": ids,
+                "ids": [a.get("id") for a in company_alerts],
             })
 
             continue
 
         for title, items in roles.items():
 
-            heading = f"{company} - {title}"
-            click = None
-
-            if len(items) == 1:
-                heading = f"{heading} {_location_label(items[0].get('location'))}"
-                click = items[0].get("application_url") or None
-
             notifications.append({
-                "title": heading,
-                "body": "\n".join(_role_lines(items)),
-                "click": click,
+                "title": f"{company} - {title}",
+                "body": "\n\n".join(_posting_block(item) for item in items),
+                "click": (
+                    items[0].get("application_url") or None
+                    if len(items) == 1 else None
+                ),
                 "ids": [a.get("id") for a in items],
             })
 

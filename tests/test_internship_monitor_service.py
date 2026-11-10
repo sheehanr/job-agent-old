@@ -50,9 +50,9 @@ def test_each_role_is_its_own_notification(monkeypatch):
 
     svc._send_pending_alerts(summary)
 
-    assert [title for title, _ in sent] == [
-        "Acme - SWE Intern (Remote)",
-        "Globex - ML Intern (Remote)",
+    assert sent == [
+        ("Acme - SWE Intern", "https://a/1\n(Remote)"),
+        ("Globex - ML Intern", "https://g/2\n(Remote)"),
     ]
     assert marked == [1, 2]
     assert summary["sms_sent"] == 2

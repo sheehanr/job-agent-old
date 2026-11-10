@@ -48,7 +48,8 @@ Alerts are deliberately narrow. A posting only alerts if it is:
 - not PhD/Master's-only, and
 - not already alerted.
 
-Each new role gets its own notification with its apply link. This is a discovery and alerting tool, not an application
+Each company with new postings gets its own notification with every apply
+link. This is a discovery and alerting tool, not an application
 tracker: it doesn't track saved jobs, applications, or interviews.
 
 ## Architecture
@@ -195,20 +196,47 @@ python src/simplify_alerts.py --report-unmatched
 
 ## Alerts
 
-Each new role gets **its own** notification (`src/alert_message.py`):
+Notifications are built in `src/alert_message.py`. The title is always
+"Company - Role" (no location), and the body has each apply link with its
+location in parentheses on the line below.
 
-- Title: "Company - Role (location)", e.g. "Stryker - SWE Intern (Portage, MI)".
-- Body: the apply link. Tapping the notification opens it too.
-- The same role posted in several locations is one notification, with each
-  location and its link in the body.
-- A company posting 4 or more roles in one run gets one "Meta - 6 new
-  roles" notification listing each role and link, so the phone doesn't
-  buzz six times.
+One role (tapping the notification opens the link):
+
+```
+Stryker - SWE Intern
+https://stryker.com/...
+(Portage, MI)
+```
+
+Same role in 2 or more locations:
+
+```
+Lockheed - Embedded Intern
+https://...
+(Austin, TX)
+
+https://...
+(Denver, CO)
+```
+
+Same company, 2 or more roles in one run:
+
+```
+Meta - 2 new roles
+ML Intern: https://...
+(Menlo Park, CA)
+
+SWE Intern: https://...
+(Seattle, WA)
+```
+
+Different companies always get separate notifications.
 
 Which source found it (career site or Simplify) isn't shown; the link
 goes to the company's own application page either way. Every apply link
 is always included: a notification too long for one ntfy push (about 4 KB)
-is split into numbered parts, "(1/2)", "(2/2)", never trimmed. Alerts go out at any hour, because there is no texting window; use your phone's Do
+is split into numbered parts, "(1/2)", "(2/2)", never trimmed. Alerts go
+out at any hour, because there is no texting window; use your phone's Do
 Not Disturb for quiet hours. A failed send leaves that notification's
 alerts queued for the next run.
 

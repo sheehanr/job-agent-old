@@ -43,9 +43,10 @@ It runs on GitHub's servers, not my computer:
 
 Already-seen postings are tracked in a small SQLite database that the
 workflow commits back to the repo. If several new postings show up in one
-run, each role gets its own notification: "Company - Role (location)" as
-the title and the apply link as the body (tapping it opens the link). The
-same role in several locations shares one notification, and a company
-posting 4+ roles at once gets a single "Company - N new roles" notification
-listing them all. Where a posting was found isn't shown. Notifications go through ntfy, with
+run, each company gets its own notification. The title is "Company - Role"
+(or "Company - N new roles" when a company posts 2 or more roles at once),
+and the body has each apply link with its location in parentheses on the
+line below; the same role in several locations lists each link and
+location. With a single link, tapping the notification opens it. Where a
+posting was found isn't shown. Notifications go through ntfy, with
 email-to-SMS as a fallback.
