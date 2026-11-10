@@ -190,11 +190,18 @@ def send_sms_alert(body):
 if __name__ == "__main__":
     import sys
 
-    delivered = send_alert(
-        "Job Agent test - if you can read this, phone alerts work.\n"
-        "https://github.com/sheehanr/job-agent",
-        title="Test alert",
-    )
+    from alert_message import build_notifications
+
+    # A sample posting, sent exactly the way a real alert is formatted.
+    [note] = build_notifications([{
+        "id": 0,
+        "company": "Job Agent test",
+        "title": "Software Engineering Intern",
+        "location": "Boston, MA",
+        "application_url": "https://github.com/sheehanr/job-agent",
+    }])
+
+    delivered = send_alert(note["body"], title=note["title"], click=note["click"])
 
     # Non-zero exit so a misconfigured secret fails the workflow step.
     sys.exit(0 if delivered else 1)
