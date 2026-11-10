@@ -16,8 +16,9 @@ on:
         default: false
       test_alert:
         description: >-
-          Send one test notification (ntfy, or SMS if NTFY_TOPIC isn't
-          set) before the run, to check secrets and phone delivery.
+          Send three test notifications, one of each type (ntfy, or SMS
+          if NTFY_TOPIC isn't set) before the run, to check secrets and
+          phone delivery.
         type: boolean
         default: false
 

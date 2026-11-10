@@ -283,7 +283,9 @@ only if it changed.
    topic name as the value. The SMS secrets are optional and only needed
    without ntfy.
 4. **Test it.** Run the workflow with **test_alert** ticked. You should get
-   a "Test alert" push. If you don't, the step fails.
+   three pushes, "Test 1 of 3" to "Test 3 of 3", one of each notification
+   type (one role, one role in several locations, several roles at one
+   company). If they don't arrive, the step fails.
 
 The workflow already requests `contents: write` so it can commit the
 database. No other repository settings are needed.

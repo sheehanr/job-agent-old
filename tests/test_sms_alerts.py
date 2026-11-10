@@ -268,3 +268,28 @@ def test_short_body_is_one_push_without_part_numbers(monkeypatch):
     assert sms_alerts.send_alert("SWE Intern - Acme\nhttps://a/1", title="T")
     assert len(posts) == 1
     assert posts[0]["headers"]["Title"] == "T"
+
+
+def test_test_alerts_send_one_of_each_type(monkeypatch):
+
+    sent = []
+    monkeypatch.setattr(
+        sms_alerts, "send_alert",
+        lambda body, title=None, click=None: sent.append((title, body, click)) or True
+    )
+
+    assert sms_alerts.send_test_alerts() is True
+
+    assert [t for t, _, _ in sent] == [
+        "Test 1 of 3 - Software Engineering Intern",
+        "Test 2 of 3 - Embedded Software Intern",
+        "Test 3 of 3 - 2 new roles",
+    ]
+    assert sent[0][1] == "https://github.com/sheehanr/job-agent\n(Boston, MA)"
+    assert sent[0][2] == "https://github.com/sheehanr/job-agent"
+    assert "(Austin, TX)\n\n" in sent[1][1]
+    assert sent[2][1].startswith("ML Intern: https://github.com/sheehanr/job-agent")
+
+    # The ntfy topic must never be in the public repo.
+    for _, body, _ in sent:
+        assert "ntfy.sh/" not in body

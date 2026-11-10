@@ -187,21 +187,45 @@ def send_sms_alert(body):
     return True
 
 
-if __name__ == "__main__":
-    import sys
+REPO_URL = "https://github.com/sheehanr/job-agent"
+
+# Sample postings for the workflow's "send test notification" option: one
+# of each notification type. Links are deliberately public pages - never
+# put the ntfy topic in this public repo.
+TEST_ALERTS = [
+    # One role.
+    {"company": "Test 1 of 3", "title": "Software Engineering Intern",
+     "location": "Boston, MA", "application_url": REPO_URL},
+    # Same role, several locations.
+    {"company": "Test 2 of 3", "title": "Embedded Software Intern",
+     "location": "Austin, TX", "application_url": REPO_URL},
+    {"company": "Test 2 of 3", "title": "Embedded Software Intern",
+     "location": "Denver, CO", "application_url": f"{REPO_URL}/actions"},
+    # Same company, several roles.
+    {"company": "Test 3 of 3", "title": "ML Intern",
+     "location": "Menlo Park, CA", "application_url": REPO_URL},
+    {"company": "Test 3 of 3", "title": "SWE Intern",
+     "location": "Seattle, WA", "application_url": "https://ntfy.sh"},
+]
+
+
+def send_test_alerts():
+    """Send one notification of each type. True only if all arrive."""
 
     from alert_message import build_notifications
 
-    # A sample posting, sent exactly the way a real alert is formatted.
-    [note] = build_notifications([{
-        "id": 0,
-        "company": "Job Agent test",
-        "title": "Software Engineering Intern",
-        "location": "Boston, MA",
-        "application_url": "https://github.com/sheehanr/job-agent",
-    }])
+    alerts = [dict(a, id=i) for i, a in enumerate(TEST_ALERTS)]
 
-    delivered = send_alert(note["body"], title=note["title"], click=note["click"])
+    results = [
+        send_alert(note["body"], title=note["title"], click=note["click"])
+        for note in build_notifications(alerts)
+    ]
+
+    return len(results) == 3 and all(results)
+
+
+if __name__ == "__main__":
+    import sys
 
     # Non-zero exit so a misconfigured secret fails the workflow step.
-    sys.exit(0 if delivered else 1)
+    sys.exit(0 if send_test_alerts() else 1)
